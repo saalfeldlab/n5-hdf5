@@ -27,7 +27,9 @@ package org.janelia.saalfeldlab.n5.hdf5;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.janelia.saalfeldlab.n5.ByteArrayDataBlock;
 import org.janelia.saalfeldlab.n5.CompressionType;
@@ -384,5 +386,14 @@ public class N5HDF5Reader implements N5Reader {
 	public boolean datasetExists(final String pathName) {
 
 		return reader.exists(pathName) && reader.object().isDataSet(pathName);
+	}
+
+	@Override
+	public Map<String, Class<?>> listAttributes(String pathName) throws IOException {
+
+		HashMap<String, Class<?>> attributes = new HashMap<>();
+		reader.object().getAttributeNames(pathName).forEach(
+				attributeName -> attributes.put(attributeName, reader.object().getAttributeInformation(pathName, attributeName).tryGetJavaType()));
+		return attributes;
 	}
 }
