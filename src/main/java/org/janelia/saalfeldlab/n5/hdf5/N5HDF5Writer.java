@@ -194,6 +194,8 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 			writer.float32().setArrayAttr(pathName, key, (float[])attribute);
 		else if (attribute instanceof double[])
 			writer.float64().setArrayAttr(pathName, key, (double[])attribute);
+		else if (attribute instanceof String[])
+			writer.string().setArrayAttr(pathName, key, (String[])attribute);
 		else
 			throw new IOException("N5-HDF5: attributes of type " + attribute.getClass() + " not yet supported.");
 	}
