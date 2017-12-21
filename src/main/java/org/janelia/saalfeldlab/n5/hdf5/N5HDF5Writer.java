@@ -152,7 +152,9 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	}
 
 	@Override
-	public void createGroup(final String pathName) throws IOException {
+	public void createGroup(String pathName) throws IOException {
+
+		if (pathName.equals("")) pathName = "/";
 
 		if (writer.exists(pathName)) {
 			if (!writer.isGroup(pathName))
@@ -164,9 +166,11 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 
 	@Override
 	public <T> void setAttribute(
-			final String pathName,
+			String pathName,
 			final String key,
 			final T attribute) throws IOException {
+
+		if (pathName.equals("")) pathName = "/";
 
 		if (attribute instanceof Byte)
 			writer.int8().setAttr(pathName, key, (Byte)attribute);
@@ -202,8 +206,10 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 
 	@Override
 	public void setAttributes(
-			final String pathName,
+			String pathName,
 			final Map<String, ?> attributes) throws IOException {
+
+		if (pathName.equals("")) pathName = "/";
 
 		for (final Entry<String, ?> attribute : attributes.entrySet())
 			setAttribute(pathName, attribute.getKey(), attribute.getValue());
@@ -219,9 +225,11 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 
 	@Override
 	public <T> void writeBlock(
-			final String pathName,
+			String pathName,
 			final DatasetAttributes datasetAttributes,
 			final DataBlock<T> dataBlock) throws IOException {
+
+		if (pathName.equals("")) pathName = "/";
 
 		final long[] gridPosition = dataBlock.getGridPosition();
 		final int[] dataBlockSize = dataBlock.getSize();
@@ -295,7 +303,9 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	}
 
 	@Override
-	public boolean remove(final String pathName) throws IOException {
+	public boolean remove(String pathName) throws IOException {
+
+		if (pathName.equals("")) pathName = "/";
 
 		writer.delete(pathName);
 		return !writer.exists(pathName);

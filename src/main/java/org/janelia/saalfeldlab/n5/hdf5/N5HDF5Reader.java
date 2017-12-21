@@ -100,21 +100,27 @@ public class N5HDF5Reader implements N5Reader {
 	}
 
 	@Override
-	public boolean exists(final String pathName) {
+	public boolean exists(String pathName) {
+
+		if (pathName.equals("")) pathName = "/";
 
 		return reader.exists(pathName);
 	}
 
 	@Override
-	public String[] list(final String pathName) {
+	public String[] list(String pathName) {
 
-		final List<String> members = reader.object().getGroupMembers(pathName == "" ? "/" : pathName);
+		if (pathName.equals("")) pathName = "/";
+
+		final List<String> members = reader.object().getGroupMembers(pathName);
 		return members.toArray(new String[members.size()]);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T> T getAttribute(final String pathName, final String key, final Class<T> clazz) throws IOException {
+	public <T> T getAttribute(String pathName, final String key, final Class<T> clazz) throws IOException {
+
+		if (pathName.equals("")) pathName = "/";
 
 		if (!reader.exists(pathName))
 			return null;
@@ -280,7 +286,9 @@ public class N5HDF5Reader implements N5Reader {
 	}
 
 	@Override
-	public DatasetAttributes getDatasetAttributes(final String pathName) {
+	public DatasetAttributes getDatasetAttributes(String pathName) {
+
+		if (pathName.equals("")) pathName = "/";
 
 		final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
 		final long[] dimensions = datasetInfo.getDimensions();
@@ -307,8 +315,10 @@ public class N5HDF5Reader implements N5Reader {
 	public DataBlock<?> readBlock(
 			String pathName,
 			DatasetAttributes datasetAttributes,
-			long[] gridPosition) throws IOException
-	{
+			long[] gridPosition) throws IOException {
+
+		if (pathName.equals("")) pathName = "/";
+
 		final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
 		final long[] hdf5Dimensions = datasetInfo.getDimensions();
 		int[] hdf5BlockSize = datasetInfo.tryGetChunkSizes();
@@ -383,17 +393,21 @@ public class N5HDF5Reader implements N5Reader {
 	}
 
 	@Override
-	public boolean datasetExists(final String pathName) {
+	public boolean datasetExists(String pathName) {
+
+		if (pathName.equals("")) pathName = "/";
 
 		return reader.exists(pathName) && reader.object().isDataSet(pathName);
 	}
 
 	@Override
-	public Map<String, Class<?>> listAttributes(String pathName) throws IOException {
+	public Map<String, Class<?>> listAttributes(final String pathName) throws IOException {
 
-		HashMap<String, Class<?>> attributes = new HashMap<>();
-		reader.object().getAttributeNames(pathName).forEach(
-				attributeName -> attributes.put(attributeName, reader.object().getAttributeInformation(pathName, attributeName).tryGetJavaType()));
+		final String finalPathName = pathName.equals("") ? "/" : pathName;
+
+		final HashMap<String, Class<?>> attributes = new HashMap<>();
+		reader.object().getAttributeNames(finalPathName).forEach(
+				attributeName -> attributes.put(attributeName, reader.object().getAttributeInformation(finalPathName, attributeName).tryGetJavaType()));
 		return attributes;
 	}
 }
