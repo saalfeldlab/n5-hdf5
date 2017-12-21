@@ -179,7 +179,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 		else if (attribute instanceof Float)
 			writer.float32().setAttr(pathName, key, (Integer)attribute);
 		else if (attribute instanceof Double)
-			writer.float64().setAttr(pathName, key, (Long)attribute);
+			writer.float64().setAttr(pathName, key, (Double)attribute);
 		else if (attribute instanceof String)
 			writer.string().setAttr(pathName, key, (String)attribute);
 		else if (attribute instanceof byte[])
