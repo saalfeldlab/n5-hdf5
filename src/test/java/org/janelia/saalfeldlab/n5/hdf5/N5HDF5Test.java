@@ -72,7 +72,7 @@ public class N5HDF5Test {
 	@BeforeClass
 	public static void setUpBeforeClass() throws IOException {
 
-		n5 = new N5HDF5Writer(testDirPath);
+		n5 = new N5HDF5Writer(testDirPath, blockSize);
 
 		final Random rnd = new Random();
 		byteBlock = new byte[blockSize[0] * blockSize[1] * blockSize[2]];

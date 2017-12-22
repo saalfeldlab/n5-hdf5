@@ -61,10 +61,13 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	/**
 	 * Opens an {@link N5HDF5Writer} for a given HDF5 file.
 	 *
-	 * @param writer
+	 * @param writer HDF5 writer
 	 * @param defaultBlockSize
+	 * 				for all dimensions > defaultBlockSize.length, and for all
+	 *              dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *              dataset will be used
 	 */
-	public N5HDF5Writer(final IHDF5Writer writer, final int defaultBlockSize) {
+	public N5HDF5Writer(final IHDF5Writer writer, final int... defaultBlockSize) {
 
 		super(writer, defaultBlockSize);
 		this.writer = writer;
@@ -75,8 +78,11 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	 *
 	 * @param hdf5Path HDF5 file name
 	 * @param defaultBlockSize
+	 * 				for all dimensions > defaultBlockSize.length, and for all
+	 *              dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *              dataset will be used
 	 */
-	public N5HDF5Writer(final String hdf5Path, final int defaultBlockSize) {
+	public N5HDF5Writer(final String hdf5Path, final int... defaultBlockSize) {
 
 		this(HDF5Factory.open(hdf5Path), defaultBlockSize);
 	}
@@ -237,14 +243,17 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 		reorder(hdf5DataBlockSize);
 		final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
 		final int[] hdf5BlockSize;
-		int[] tryHdf5BlockSize = datasetInfo.tryGetChunkSizes();
+		final int[] tryHdf5BlockSize = datasetInfo.tryGetChunkSizes();
 		if (tryHdf5BlockSize == null) {
+			final long[] hdf5Dimensions = datasetInfo.getDimensions();
 			hdf5BlockSize = new int[dataBlockSize.length];
-			if (defaultBlockSize <= 0) {
-				final long[] hdf5Dimensions = datasetInfo.getDimensions();
-				Arrays.setAll(hdf5BlockSize, i -> (int)hdf5Dimensions[i]);
-			} else
-				Arrays.fill(hdf5BlockSize, defaultBlockSize);
+			for (int i = hdf5BlockSize.length; i >= 0; --i) {
+				final int j = hdf5BlockSize.length - 1 - i;
+				if (i >= defaultBlockSize.length || defaultBlockSize[i] <= 0)
+					hdf5BlockSize[j] = (int)hdf5Dimensions[j];
+				else
+					hdf5BlockSize[j] = defaultBlockSize[i];
+			}
 		} else
 			hdf5BlockSize = tryHdf5BlockSize;
 
@@ -297,7 +306,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	@Override
 	public boolean remove() {
 
-		File file = writer.file().getFile();
+		final File file = writer.file().getFile();
 		writer.close();
 		return file.delete();
 	}

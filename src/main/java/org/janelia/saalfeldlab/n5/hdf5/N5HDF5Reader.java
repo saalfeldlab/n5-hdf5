@@ -26,7 +26,6 @@
 package org.janelia.saalfeldlab.n5.hdf5;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,15 +63,18 @@ public class N5HDF5Reader implements N5Reader {
 
 	protected final IHDF5Reader reader;
 
-	protected final int defaultBlockSize;
+	protected final int[] defaultBlockSize;
 
 	/**
 	 * Opens an {@link N5HDF5Reader} for a given HDF5 file.
 	 *
-	 * @param reader
+	 * @param reader HDF5 reader
 	 * @param defaultBlockSize
+	 * 				for all dimensions > defaultBlockSize.length, and for all
+	 *              dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *              dataset will be used
 	 */
-	public N5HDF5Reader(final IHDF5Reader reader, final int defaultBlockSize) {
+	public N5HDF5Reader(final IHDF5Reader reader, final int... defaultBlockSize) {
 
 		this.reader = reader;
 		this.defaultBlockSize = defaultBlockSize;
@@ -83,8 +85,11 @@ public class N5HDF5Reader implements N5Reader {
 	 *
 	 * @param hdf5Path HDF5 file name
 	 * @param defaultBlockSize
+	 * 				for all dimensions > defaultBlockSize.length, and for all
+	 *              dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *              dataset will be used
 	 */
-	public N5HDF5Reader(final String hdf5Path, final int defaultBlockSize) {
+	public N5HDF5Reader(final String hdf5Path, final int... defaultBlockSize) {
 
 		this(HDF5Factory.openForReading(hdf5Path), defaultBlockSize);
 	}
@@ -277,10 +282,12 @@ public class N5HDF5Reader implements N5Reader {
 			reorder(blockSize);
 		else {
 			blockSize = new int[dimensions.length];
-			if (defaultBlockSize <= 0)
-				Arrays.setAll(blockSize, i -> (int)dimensions[dimensions.length - i - 1]);
-			else
-				Arrays.fill(blockSize, defaultBlockSize);
+			for (int i = 0; i < blockSize.length; ++i) {
+				if (i >= defaultBlockSize.length || defaultBlockSize[i] <= 0)
+					blockSize[i] = (int)dimensions[dimensions.length - i - 1];
+				else
+					blockSize[i] = defaultBlockSize[i];
+			}
 		}
 		return blockSize;
 	}
@@ -298,10 +305,12 @@ public class N5HDF5Reader implements N5Reader {
 			reorder(blockSize);
 		else {
 			blockSize = new int[dimensions.length];
-			if (defaultBlockSize <= 0)
-				Arrays.setAll(blockSize, i -> (int)dimensions[i]);
-			else
-				Arrays.fill(blockSize, defaultBlockSize);
+			for (int i = 0; i < blockSize.length; ++i) {
+				if (i >= defaultBlockSize.length || defaultBlockSize[i] <= 0)
+					blockSize[i] = (int)dimensions[i];
+				else
+					blockSize[i] = defaultBlockSize[i];
+			}
 		}
 
 		return new DatasetAttributes(
@@ -314,8 +323,8 @@ public class N5HDF5Reader implements N5Reader {
 	@Override
 	public DataBlock<?> readBlock(
 			String pathName,
-			DatasetAttributes datasetAttributes,
-			long[] gridPosition) throws IOException {
+			final DatasetAttributes datasetAttributes,
+			final long[] gridPosition) throws IOException {
 
 		if (pathName.equals("")) pathName = "/";
 
@@ -324,10 +333,13 @@ public class N5HDF5Reader implements N5Reader {
 		int[] hdf5BlockSize = datasetInfo.tryGetChunkSizes();
 		if (hdf5BlockSize == null) {
 			hdf5BlockSize = new int[hdf5Dimensions.length];
-			if (defaultBlockSize <= 0)
-				Arrays.setAll(hdf5BlockSize, i -> (int)hdf5Dimensions[i]);
-			else
-				Arrays.fill(hdf5BlockSize, defaultBlockSize);
+			for (int i = hdf5BlockSize.length; i >= 0; --i) {
+				final int j = hdf5BlockSize.length - 1 - i;
+				if (i >= defaultBlockSize.length || defaultBlockSize[i] <= 0)
+					hdf5BlockSize[j] = (int)hdf5Dimensions[j];
+				else
+					hdf5BlockSize[j] = defaultBlockSize[i];
+			}
 		}
 
 		final long[] hdf5GridPosition = gridPosition.clone();
@@ -409,5 +421,10 @@ public class N5HDF5Reader implements N5Reader {
 		reader.object().getAttributeNames(finalPathName).forEach(
 				attributeName -> attributes.put(attributeName, reader.object().getAttributeInformation(finalPathName, attributeName).tryGetJavaType()));
 		return attributes;
+	}
+
+	public void close() {
+
+		reader.close();
 	}
 }
