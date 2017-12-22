@@ -101,7 +101,7 @@ public class N5HDF5Reader implements N5Reader {
 	 */
 	public N5HDF5Reader(final String hdf5Path) {
 
-		this(HDF5Factory.openForReading(hdf5Path), 0);
+		this(HDF5Factory.openForReading(hdf5Path));
 	}
 
 	@Override
