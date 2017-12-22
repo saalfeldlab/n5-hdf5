@@ -184,7 +184,7 @@ public class N5HDF5Reader implements N5Reader {
 		} else if (type.isAssignableFrom(double.class))
 			return (T) new Double(reader.float64().getAttr(pathName, key));
 		else if (type.isAssignableFrom(float.class))
-			return (T) new Double(reader.float32().getAttr(pathName, key));
+			return (T) new Float(reader.float32().getAttr(pathName, key));
 		else if (type.isAssignableFrom(String.class))
 			return (T) new String(reader.string().getAttr(pathName, key));
 
