@@ -31,11 +31,12 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.janelia.saalfeldlab.n5.CompressionType;
+import org.janelia.saalfeldlab.n5.Compression;
 import org.janelia.saalfeldlab.n5.DataBlock;
 import org.janelia.saalfeldlab.n5.DataType;
 import org.janelia.saalfeldlab.n5.DatasetAttributes;
 import org.janelia.saalfeldlab.n5.N5Writer;
+import org.janelia.saalfeldlab.n5.RawCompression;
 
 import ch.systemsx.cisd.base.mdarray.MDByteArray;
 import ch.systemsx.cisd.base.mdarray.MDDoubleArray;
@@ -92,10 +93,10 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 			final DatasetAttributes datasetAttributes) throws IOException {
 
 		final DataType dataType = datasetAttributes.getDataType();
-		final CompressionType compressionType = datasetAttributes.getCompressionType();
+		final Compression compression = datasetAttributes.getCompression();
 		final HDF5IntStorageFeatures intCompression;
 		final HDF5FloatStorageFeatures floatCompression;
-		if (compressionType == CompressionType.RAW) {
+		if (compression instanceof RawCompression) {
 			floatCompression = HDF5FloatStorageFeatures.FLOAT_NO_COMPRESSION;
 			intCompression = HDF5IntStorageFeatures.INT_NO_COMPRESSION;
 		} else {

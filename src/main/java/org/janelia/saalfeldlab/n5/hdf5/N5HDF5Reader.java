@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.janelia.saalfeldlab.n5.ByteArrayDataBlock;
-import org.janelia.saalfeldlab.n5.CompressionType;
+import org.janelia.saalfeldlab.n5.Compression.CompressionType;
 import org.janelia.saalfeldlab.n5.DataBlock;
 import org.janelia.saalfeldlab.n5.DataType;
 import org.janelia.saalfeldlab.n5.DatasetAttributes;
@@ -40,6 +40,7 @@ import org.janelia.saalfeldlab.n5.FloatArrayDataBlock;
 import org.janelia.saalfeldlab.n5.IntArrayDataBlock;
 import org.janelia.saalfeldlab.n5.LongArrayDataBlock;
 import org.janelia.saalfeldlab.n5.N5Reader;
+import org.janelia.saalfeldlab.n5.RawCompression;
 import org.janelia.saalfeldlab.n5.ShortArrayDataBlock;
 
 import ch.systemsx.cisd.base.mdarray.MDByteArray;
@@ -297,7 +298,7 @@ public class N5HDF5Reader implements N5Reader {
 				dimensions,
 				blockSize,
 				getDataType(datasetInfo),
-				CompressionType.RAW);
+				new RawCompression());
 	}
 
 	@Override
