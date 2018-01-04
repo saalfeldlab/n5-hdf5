@@ -87,16 +87,6 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 		this(HDF5Factory.open(hdf5Path), defaultBlockSize);
 	}
 
-	/**
-	 * Opens an {@link N5HDF5Writer} for a given HDF5 file.
-	 *
-	 * @param hdf5Path HDF5 file name
-	 */
-	public N5HDF5Writer(final String hdf5Path) {
-
-		this(HDF5Factory.open(hdf5Path));
-	}
-
 	@Override
 	public void createDataset(
 			final String pathName,

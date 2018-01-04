@@ -77,7 +77,10 @@ public class N5HDF5Reader implements N5Reader {
 	public N5HDF5Reader(final IHDF5Reader reader, final int... defaultBlockSize) {
 
 		this.reader = reader;
-		this.defaultBlockSize = defaultBlockSize;
+		if (defaultBlockSize == null)
+			this.defaultBlockSize = new int[0];
+		else
+			this.defaultBlockSize = defaultBlockSize;
 	}
 
 	/**
@@ -92,16 +95,6 @@ public class N5HDF5Reader implements N5Reader {
 	public N5HDF5Reader(final String hdf5Path, final int... defaultBlockSize) {
 
 		this(HDF5Factory.openForReading(hdf5Path), defaultBlockSize);
-	}
-
-	/**
-	 * Opens an {@link N5HDF5Reader} for a given HDF5 file.
-	 *
-	 * @param hdf5Path HDF5 file name
-	 */
-	public N5HDF5Reader(final String hdf5Path) {
-
-		this(HDF5Factory.openForReading(hdf5Path));
 	}
 
 	@Override
