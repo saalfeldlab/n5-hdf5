@@ -285,6 +285,10 @@ public class N5HDF5Reader implements N5Reader {
 		return blockSize;
 	}
 
+	/**
+	 * Always returns {@link CompressionType#RAW} because I could not yet find
+	 * a meaningful way to get information about the compression of a dataset.
+	 */
 	@Override
 	public DatasetAttributes getDatasetAttributes(String pathName) {
 
