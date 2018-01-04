@@ -43,7 +43,6 @@ import ch.systemsx.cisd.base.mdarray.MDFloatArray;
 import ch.systemsx.cisd.base.mdarray.MDIntArray;
 import ch.systemsx.cisd.base.mdarray.MDLongArray;
 import ch.systemsx.cisd.base.mdarray.MDShortArray;
-import ch.systemsx.cisd.hdf5.HDF5DataSetInformation;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.HDF5FloatStorageFeatures;
 import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;
@@ -227,26 +226,11 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 
 		if (pathName.equals("")) pathName = "/";
 
-		final long[] gridPosition = dataBlock.getGridPosition();
-		final int[] dataBlockSize = dataBlock.getSize();
-		final int[] hdf5DataBlockSize = dataBlockSize.clone();
+		final int[] hdf5DataBlockSize = dataBlock.getSize().clone();
 		reorder(hdf5DataBlockSize);
-		final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
-		final int[] hdf5BlockSize;
-		final int[] tryHdf5BlockSize = datasetInfo.tryGetChunkSizes();
-		if (tryHdf5BlockSize == null) {
-			final long[] hdf5Dimensions = datasetInfo.getDimensions();
-			hdf5BlockSize = new int[dataBlockSize.length];
-			for (int i = hdf5BlockSize.length; i >= 0; --i) {
-				final int j = hdf5BlockSize.length - 1 - i;
-				if (i >= defaultBlockSize.length || defaultBlockSize[i] <= 0)
-					hdf5BlockSize[j] = (int)hdf5Dimensions[j];
-				else
-					hdf5BlockSize[j] = defaultBlockSize[i];
-			}
-		} else
-			hdf5BlockSize = tryHdf5BlockSize;
-
+		final int[] hdf5BlockSize = datasetAttributes.getBlockSize().clone();
+		reorder(hdf5BlockSize);
+		final long[] gridPosition = dataBlock.getGridPosition();
 		final long[] hdf5Offset = new long[gridPosition.length];
 		Arrays.setAll(hdf5Offset, i -> gridPosition[gridPosition.length - i - 1] * hdf5BlockSize[i]);
 		switch (datasetAttributes.getDataType()) {

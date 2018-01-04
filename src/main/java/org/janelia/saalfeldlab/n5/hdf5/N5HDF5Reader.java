@@ -267,24 +267,6 @@ public class N5HDF5Reader implements N5Reader {
 		}
 	}
 
-	protected int[] getBlockSize(final HDF5DataSetInformation datasetInfo) {
-
-		final long[] dimensions = datasetInfo.getDimensions();
-		int[] blockSize = datasetInfo.tryGetChunkSizes();
-		if (blockSize != null)
-			reorder(blockSize);
-		else {
-			blockSize = new int[dimensions.length];
-			for (int i = 0; i < blockSize.length; ++i) {
-				if (i >= defaultBlockSize.length || defaultBlockSize[i] <= 0)
-					blockSize[i] = (int)dimensions[dimensions.length - i - 1];
-				else
-					blockSize[i] = defaultBlockSize[i];
-			}
-		}
-		return blockSize;
-	}
-
 	/**
 	 * Always returns {@link CompressionType#RAW} because I could not yet find
 	 * a meaningful way to get information about the compression of a dataset.
@@ -298,6 +280,7 @@ public class N5HDF5Reader implements N5Reader {
 		final long[] dimensions = datasetInfo.getDimensions();
 		reorder(dimensions);
 		int[] blockSize = datasetInfo.tryGetChunkSizes();
+
 		if (blockSize != null)
 			reorder(blockSize);
 		else {
@@ -325,20 +308,10 @@ public class N5HDF5Reader implements N5Reader {
 
 		if (pathName.equals("")) pathName = "/";
 
-		final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
-		final long[] hdf5Dimensions = datasetInfo.getDimensions();
-		int[] hdf5BlockSize = datasetInfo.tryGetChunkSizes();
-		if (hdf5BlockSize == null) {
-			hdf5BlockSize = new int[hdf5Dimensions.length];
-			for (int i = hdf5BlockSize.length; i >= 0; --i) {
-				final int j = hdf5BlockSize.length - 1 - i;
-				if (i >= defaultBlockSize.length || defaultBlockSize[i] <= 0)
-					hdf5BlockSize[j] = (int)hdf5Dimensions[j];
-				else
-					hdf5BlockSize[j] = defaultBlockSize[i];
-			}
-		}
-
+		final long[] hdf5Dimensions = datasetAttributes.getDimensions().clone();
+		reorder(hdf5Dimensions);
+		final int[] hdf5BlockSize = datasetAttributes.getBlockSize().clone();
+		reorder(hdf5BlockSize);
 		final long[] hdf5GridPosition = gridPosition.clone();
 		reorder(hdf5GridPosition);
 		final int[] hdf5CroppedBlockSize = new int[hdf5BlockSize.length];
