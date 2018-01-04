@@ -52,7 +52,6 @@ import ch.systemsx.cisd.hdf5.HDF5DataSetInformation;
 import ch.systemsx.cisd.hdf5.HDF5DataTypeInformation;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
-import net.imglib2.Interval;
 
 /**
  * Best effort {@link N5Reader} implementation for HDF5 files.
@@ -244,9 +243,9 @@ public class N5HDF5Reader implements N5Reader {
 
 	/**
 	 * Crops the dimensions of a {@link DataBlock} at a given offset to fit
-	 * into and {@link Interval} of given dimensions.  Fills long and int
-	 * version of cropped block size.  Also calculates the grid raster position
-	 * assuming that the offset divisible by block size without remainder.
+	 * into an interval of given dimensions.  Fills long and int version of
+	 * cropped block size.  Also calculates the grid raster position assuming
+	 * that the offset is divisible by block size without remainder.
 	 *
 	 * @param gridPosition
 	 * @param dimensions
