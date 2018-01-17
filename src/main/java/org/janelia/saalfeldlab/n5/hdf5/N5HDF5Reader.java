@@ -42,6 +42,7 @@ import org.janelia.saalfeldlab.n5.LongArrayDataBlock;
 import org.janelia.saalfeldlab.n5.N5Reader;
 import org.janelia.saalfeldlab.n5.RawCompression;
 import org.janelia.saalfeldlab.n5.ShortArrayDataBlock;
+import org.scijava.util.VersionUtils;
 
 import ch.systemsx.cisd.base.mdarray.MDByteArray;
 import ch.systemsx.cisd.base.mdarray.MDDoubleArray;
@@ -61,6 +62,11 @@ import ch.systemsx.cisd.hdf5.IHDF5Reader;
  */
 public class N5HDF5Reader implements N5Reader {
 
+    	/**
+	 * SemVer version of this N5-HDF5 spec.
+	 */
+	public static final Version VERSION = new Version(VersionUtils.getVersion(N5HDF5Reader.class));
+
 	protected final IHDF5Reader reader;
 
 	protected final int[] defaultBlockSize;
@@ -73,10 +79,15 @@ public class N5HDF5Reader implements N5Reader {
 	 * 				for all dimensions > defaultBlockSize.length, and for all
 	 *              dimensions with defaultBlockSize[i] <= 0, the size of the
 	 *              dataset will be used
+	 * @throws IOException
 	 */
-	public N5HDF5Reader(final IHDF5Reader reader, final int... defaultBlockSize) {
+	public N5HDF5Reader(final IHDF5Reader reader, final int... defaultBlockSize) throws IOException {
 
 		this.reader = reader;
+		final Version version = getVersion();
+		if (!VERSION.isCompatible(version))
+			throw new IOException("Incompatible N5-HDF5 version " + version + " (this is " + VERSION + ").");
+
 		if (defaultBlockSize == null)
 			this.defaultBlockSize = new int[0];
 		else
@@ -91,8 +102,9 @@ public class N5HDF5Reader implements N5Reader {
 	 * 				for all dimensions > defaultBlockSize.length, and for all
 	 *              dimensions with defaultBlockSize[i] <= 0, the size of the
 	 *              dataset will be used
+	 * @throws IOException
 	 */
-	public N5HDF5Reader(final String hdf5Path, final int... defaultBlockSize) {
+	public N5HDF5Reader(final String hdf5Path, final int... defaultBlockSize) throws IOException {
 
 		this(HDF5Factory.openForReading(hdf5Path), defaultBlockSize);
 	}

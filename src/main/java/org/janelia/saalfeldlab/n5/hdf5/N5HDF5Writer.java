@@ -66,11 +66,13 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	 * 				for all dimensions > defaultBlockSize.length, and for all
 	 *              dimensions with defaultBlockSize[i] <= 0, the size of the
 	 *              dataset will be used
+	 * @throws IOException
 	 */
-	public N5HDF5Writer(final IHDF5Writer writer, final int... defaultBlockSize) {
+	public N5HDF5Writer(final IHDF5Writer writer, final int... defaultBlockSize) throws IOException {
 
 		super(writer, defaultBlockSize);
 		this.writer = writer;
+		setAttribute("/", VERSION_KEY, N5HDF5Reader.VERSION.toString());
 	}
 
 	/**
@@ -81,8 +83,9 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	 * 				for all dimensions > defaultBlockSize.length, and for all
 	 *              dimensions with defaultBlockSize[i] <= 0, the size of the
 	 *              dataset will be used
+	 * @throws IOException
 	 */
-	public N5HDF5Writer(final String hdf5Path, final int... defaultBlockSize) {
+	public N5HDF5Writer(final String hdf5Path, final int... defaultBlockSize) throws IOException {
 
 		this(HDF5Factory.open(hdf5Path), defaultBlockSize);
 	}
