@@ -65,7 +65,7 @@ public class N5HDF5Reader implements N5Reader {
     	/**
 	 * SemVer version of this N5-HDF5 spec.
 	 */
-	public static final Version VERSION = new Version(VersionUtils.getVersion(N5HDF5Reader.class));
+	public static final Version VERSION = new Version(VersionUtils.getVersionFromPOM(N5HDF5Reader.class, "org.janelia.saalfeldlab", "n5-hdf5"));
 
 	protected final IHDF5Reader reader;
 
