@@ -71,6 +71,36 @@ public class N5HDF5Reader implements N5Reader {
 
 	protected final int[] defaultBlockSize;
 
+	protected boolean overrideBlockSize = false;
+
+	/**
+	 * Opens an {@link N5HDF5Reader} for a given HDF5 file.
+	 *
+	 * @param reader HDF5 reader
+	 * @param overrideBlockSize true if you want this {@link N5HDF5Reader} to
+	 *				use the defaultBlockSize instead of the chunk-size for
+	 *				reading datasets
+	 * @param defaultBlockSize
+	 * 				for all dimensions > defaultBlockSize.length, and for all
+	 *              dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *              dataset will be used
+	 * @throws IOException
+	 */
+	public N5HDF5Reader(final IHDF5Reader reader, final boolean overrideBlockSize, final int... defaultBlockSize) throws IOException {
+
+		this.reader = reader;
+		final Version version = getVersion();
+		if (!VERSION.isCompatible(version))
+			throw new IOException("Incompatible N5-HDF5 version " + version + " (this is " + VERSION + ").");
+
+		this.overrideBlockSize = overrideBlockSize;
+
+		if (defaultBlockSize == null)
+			this.defaultBlockSize = new int[0];
+		else
+			this.defaultBlockSize = defaultBlockSize;
+	}
+
 	/**
 	 * Opens an {@link N5HDF5Reader} for a given HDF5 file.
 	 *
@@ -83,15 +113,25 @@ public class N5HDF5Reader implements N5Reader {
 	 */
 	public N5HDF5Reader(final IHDF5Reader reader, final int... defaultBlockSize) throws IOException {
 
-		this.reader = reader;
-		final Version version = getVersion();
-		if (!VERSION.isCompatible(version))
-			throw new IOException("Incompatible N5-HDF5 version " + version + " (this is " + VERSION + ").");
+		this(reader, false, defaultBlockSize);
+	}
 
-		if (defaultBlockSize == null)
-			this.defaultBlockSize = new int[0];
-		else
-			this.defaultBlockSize = defaultBlockSize;
+	/**
+	 * Opens an {@link N5HDF5Reader} for a given HDF5 file.
+	 *
+	 * @param hdf5Path HDF5 file name
+	 * @param overrideBlockSize true if you want this {@link N5HDF5Reader} to
+	 *				use the defaultBlockSize instead of the chunk-size for
+	 *				reading datasets
+	 * @param defaultBlockSize
+	 * 				for all dimensions > defaultBlockSize.length, and for all
+	 *              dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *              dataset will be used
+	 * @throws IOException
+	 */
+	public N5HDF5Reader(final String hdf5Path, final boolean overrideBlockSize, final int... defaultBlockSize) throws IOException {
+
+		this(HDF5Factory.openForReading(hdf5Path), overrideBlockSize, defaultBlockSize);
 	}
 
 	/**
@@ -291,7 +331,7 @@ public class N5HDF5Reader implements N5Reader {
 		final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
 		final long[] dimensions = datasetInfo.getDimensions();
 		reorder(dimensions);
-		int[] blockSize = datasetInfo.tryGetChunkSizes();
+		int[] blockSize = overrideBlockSize ? null : datasetInfo.tryGetChunkSizes();
 
 		if (blockSize != null)
 			reorder(blockSize);
