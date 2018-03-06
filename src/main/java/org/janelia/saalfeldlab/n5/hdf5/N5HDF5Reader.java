@@ -202,7 +202,7 @@ public class N5HDF5Reader implements N5Reader {
 				blockSize = new int[dimensions.length];
 				for (int i = 0; i < blockSize.length; ++i) {
 					if (i >= defaultBlockSize.length || defaultBlockSize[i] <= 0)
-						blockSize[i] = (int) dimensions[i];
+						blockSize[i] = (int)dimensions[i];
 					else
 						blockSize[i] = defaultBlockSize[i];
 				}
@@ -226,56 +226,56 @@ public class N5HDF5Reader implements N5Reader {
 		final Class<?> type = attributeInfo.tryGetJavaType();
 		if (type.isAssignableFrom(long[].class))
 			if (attributeInfo.isSigned())
-				return (T) reader.int64().getArrayAttr(pathName, key);
+				return (T)reader.int64().getArrayAttr(pathName, key);
 			else
-				return (T) reader.uint64().getArrayAttr(pathName, key);
+				return (T)reader.uint64().getArrayAttr(pathName, key);
 		if (type.isAssignableFrom(int[].class))
 			if (attributeInfo.isSigned())
-				return (T) reader.int32().getArrayAttr(pathName, key);
+				return (T)reader.int32().getArrayAttr(pathName, key);
 			else
-				return (T) reader.uint32().getArrayAttr(pathName, key);
+				return (T)reader.uint32().getArrayAttr(pathName, key);
 		if (type.isAssignableFrom(short[].class))
 			if (attributeInfo.isSigned())
-				return (T) reader.int16().getArrayAttr(pathName, key);
+				return (T)reader.int16().getArrayAttr(pathName, key);
 			else
-				return (T) reader.uint16().getArrayAttr(pathName, key);
+				return (T)reader.uint16().getArrayAttr(pathName, key);
 		if (type.isAssignableFrom(byte[].class)) {
 			if (attributeInfo.isSigned())
-				return (T) reader.int8().getArrayAttr(pathName, key);
+				return (T)reader.int8().getArrayAttr(pathName, key);
 			else
-				return (T) reader.uint8().getArrayAttr(pathName, key);
+				return (T)reader.uint8().getArrayAttr(pathName, key);
 		} else if (type.isAssignableFrom(double[].class))
-			return (T) reader.float64().getArrayAttr(pathName, key);
+			return (T)reader.float64().getArrayAttr(pathName, key);
 		else if (type.isAssignableFrom(float[].class))
-			return (T) reader.float32().getArrayAttr(pathName, key);
+			return (T)reader.float32().getArrayAttr(pathName, key);
 		else if (type.isAssignableFrom(String[].class))
-			return (T) reader.string().getArrayAttr(pathName, key);
+			return (T)reader.string().getArrayAttr(pathName, key);
 		if (type.isAssignableFrom(long.class)) {
 			if (attributeInfo.isSigned())
-				return (T) new Long(reader.int64().getAttr(pathName, key));
+				return (T)new Long(reader.int64().getAttr(pathName, key));
 			else
-				return (T) new Long(reader.uint64().getAttr(pathName, key));
+				return (T)new Long(reader.uint64().getAttr(pathName, key));
 		} else if (type.isAssignableFrom(int.class)) {
 			if (attributeInfo.isSigned())
-				return (T) new Integer(reader.int32().getAttr(pathName, key));
+				return (T)new Integer(reader.int32().getAttr(pathName, key));
 			else
-				return (T) new Integer(reader.uint32().getAttr(pathName, key));
+				return (T)new Integer(reader.uint32().getAttr(pathName, key));
 		} else if (type.isAssignableFrom(short.class)) {
 			if (attributeInfo.isSigned())
-				return (T) new Short(reader.int16().getAttr(pathName, key));
+				return (T)new Short(reader.int16().getAttr(pathName, key));
 			else
-				return (T) new Short(reader.uint16().getAttr(pathName, key));
+				return (T)new Short(reader.uint16().getAttr(pathName, key));
 		} else if (type.isAssignableFrom(byte.class)) {
 			if (attributeInfo.isSigned())
-				return (T) new Byte(reader.int8().getAttr(pathName, key));
+				return (T)new Byte(reader.int8().getAttr(pathName, key));
 			else
-				return (T) new Byte(reader.uint8().getAttr(pathName, key));
+				return (T)new Byte(reader.uint8().getAttr(pathName, key));
 		} else if (type.isAssignableFrom(double.class))
-			return (T) new Double(reader.float64().getAttr(pathName, key));
+			return (T)new Double(reader.float64().getAttr(pathName, key));
 		else if (type.isAssignableFrom(float.class))
-			return (T) new Float(reader.float32().getAttr(pathName, key));
+			return (T)new Float(reader.float32().getAttr(pathName, key));
 		else if (type.isAssignableFrom(String.class))
-			return (T) new String(reader.string().getAttr(pathName, key));
+			return (T)new String(reader.string().getAttr(pathName, key));
 
 		System.err.println("Reading attributes of type " + attributeInfo + " not yet implemented.");
 		return null;
@@ -358,7 +358,7 @@ public class N5HDF5Reader implements N5Reader {
 			final long[] offset) {
 
 		for (int d = 0; d < dimensions.length; ++d) {
-			croppedBlockSize[d] = (int) Math.min(blockSize[d], dimensions[d] - offset[d]);
+			croppedBlockSize[d] = (int)Math.min(blockSize[d], dimensions[d] - offset[d]);
 			offset[d] = gridPosition[d] * blockSize[d];
 		}
 	}
@@ -384,7 +384,7 @@ public class N5HDF5Reader implements N5Reader {
 			blockSize = new int[dimensions.length];
 			for (int i = 0; i < blockSize.length; ++i) {
 				if (i >= defaultBlockSize.length || defaultBlockSize[i] <= 0)
-					blockSize[i] = (int) dimensions[i];
+					blockSize[i] = (int)dimensions[i];
 				else
 					blockSize[i] = defaultBlockSize[i];
 			}

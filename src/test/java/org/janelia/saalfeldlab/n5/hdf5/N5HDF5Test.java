@@ -44,7 +44,7 @@ public class N5HDF5Test extends AbstractN5Test {
 	@Override
 	protected Compression[] getCompressions() {
 
-		return new Compression[] {
+		return new Compression[]{
 				new RawCompression(),
 				new GzipCompression()};
 	}
@@ -52,14 +52,15 @@ public class N5HDF5Test extends AbstractN5Test {
 	@Override
 	protected N5Writer createN5Writer() throws IOException {
 
-	    return new N5HDF5Writer(testDirPath);
+		return new N5HDF5Writer(testDirPath);
 
 	}
 
 	@Override
 	@Test
 	@Ignore("HDF5 does not currently support mode 1 data blocks.")
-	public void testMode1WriteReadByteBlock() {}
+	public void testMode1WriteReadByteBlock() {
+	}
 
 	@Override
 	@Test
@@ -71,24 +72,24 @@ public class N5HDF5Test extends AbstractN5Test {
 
 		Assert.assertTrue(n5Version.equals(N5HDF5Reader.VERSION));
 
-		n5.setAttribute("/", N5Reader.VERSION_KEY, new Version(N5HDF5Reader.VERSION.getMajor() + 1, N5HDF5Reader.VERSION.getMinor(), N5HDF5Reader.VERSION.getPatch()).toString());
+		n5.setAttribute("/", N5Reader.VERSION_KEY,
+				new Version(N5HDF5Reader.VERSION.getMajor() + 1, N5HDF5Reader.VERSION.getMinor(), N5HDF5Reader.VERSION.getPatch()).toString());
 
 		Assert.assertFalse(N5HDF5Reader.VERSION.isCompatible(n5.getVersion()));
 	}
 
 	public void testOverrideBlockSize() throws IOException {
 
-
-		N5Writer n5Writer = createN5Writer();
-		DatasetAttributes attributes = new DatasetAttributes(dimensions, blockSize, DataType.INT8, new GzipCompression());
+		final N5Writer n5Writer = createN5Writer();
+		final DatasetAttributes attributes = new DatasetAttributes(dimensions, blockSize, DataType.INT8, new GzipCompression());
 		n5Writer.createDataset(datasetName, attributes);
 
-		N5HDF5Reader n5Reader = new N5HDF5Reader(testDirPath, defaultBlockSize);
-		DatasetAttributes originalAttributes = n5Reader.getDatasetAttributes(datasetName);
+		final N5HDF5Reader n5Reader = new N5HDF5Reader(testDirPath, defaultBlockSize);
+		final DatasetAttributes originalAttributes = n5Reader.getDatasetAttributes(datasetName);
 		Assert.assertArrayEquals(blockSize, originalAttributes.getBlockSize());
 
-		N5HDF5Reader n5ReaderOverride = new N5HDF5Reader(testDirPath, true, defaultBlockSize);
-		DatasetAttributes overriddenAttributes = n5ReaderOverride.getDatasetAttributes(datasetName);
+		final N5HDF5Reader n5ReaderOverride = new N5HDF5Reader(testDirPath, true, defaultBlockSize);
+		final DatasetAttributes overriddenAttributes = n5ReaderOverride.getDatasetAttributes(datasetName);
 		Assert.assertArrayEquals(defaultBlockSize, originalAttributes.getBlockSize());
 
 	}

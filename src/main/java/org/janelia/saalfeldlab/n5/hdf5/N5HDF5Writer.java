@@ -61,11 +61,12 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	/**
 	 * Opens an {@link N5HDF5Writer} for a given HDF5 file.
 	 *
-	 * @param writer HDF5 writer
+	 * @param writer
+	 *            HDF5 writer
 	 * @param defaultBlockSize
-	 * 				for all dimensions > defaultBlockSize.length, and for all
-	 *              dimensions with defaultBlockSize[i] <= 0, the size of the
-	 *              dataset will be used
+	 *            for all dimensions > defaultBlockSize.length, and for all
+	 *            dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *            dataset will be used
 	 * @throws IOException
 	 */
 	public N5HDF5Writer(final IHDF5Writer writer, final int... defaultBlockSize) throws IOException {
@@ -78,11 +79,12 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	/**
 	 * Opens an {@link N5HDF5Writer} for a given HDF5 file.
 	 *
-	 * @param hdf5Path HDF5 file name
+	 * @param hdf5Path
+	 *            HDF5 file name
 	 * @param defaultBlockSize
-	 * 				for all dimensions > defaultBlockSize.length, and for all
-	 *              dimensions with defaultBlockSize[i] <= 0, the size of the
-	 *              dataset will be used
+	 *            for all dimensions > defaultBlockSize.length, and for all
+	 *            dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *            dataset will be used
 	 * @throws IOException
 	 */
 	public N5HDF5Writer(final String hdf5Path, final int... defaultBlockSize) throws IOException {
@@ -153,13 +155,13 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	@Override
 	public void createGroup(String pathName) throws IOException {
 
-		if (pathName.equals("")) pathName = "/";
+		if (pathName.equals(""))
+			pathName = "/";
 
 		if (writer.exists(pathName)) {
 			if (!writer.isGroup(pathName))
 				throw new IOException("Group " + pathName + " already exists and is not a group.");
-		}
-		else
+		} else
 			writer.object().createGroup(pathName);
 	}
 
@@ -169,7 +171,8 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 			final String key,
 			final T attribute) throws IOException {
 
-		if (pathName.equals("")) pathName = "/";
+		if (pathName.equals(""))
+			pathName = "/";
 
 		if (attribute instanceof Byte)
 			writer.int8().setAttr(pathName, key, (Byte)attribute);
@@ -208,7 +211,8 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 			String pathName,
 			final Map<String, ?> attributes) throws IOException {
 
-		if (pathName.equals("")) pathName = "/";
+		if (pathName.equals(""))
+			pathName = "/";
 
 		for (final Entry<String, ?> attribute : attributes.entrySet())
 			setAttribute(pathName, attribute.getKey(), attribute.getValue());
@@ -228,7 +232,8 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 			final DatasetAttributes datasetAttributes,
 			final DataBlock<T> dataBlock) throws IOException {
 
-		if (pathName.equals("")) pathName = "/";
+		if (pathName.equals(""))
+			pathName = "/";
 
 		final int[] hdf5DataBlockSize = dataBlock.getSize().clone();
 		reorder(hdf5DataBlockSize);
@@ -292,7 +297,8 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	@Override
 	public boolean remove(String pathName) throws IOException {
 
-		if (pathName.equals("")) pathName = "/";
+		if (pathName.equals(""))
+			pathName = "/";
 
 		writer.delete(pathName);
 		return !writer.exists(pathName);
