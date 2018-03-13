@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.janelia.saalfeldlab.n5.ByteArrayDataBlock;
+import org.janelia.saalfeldlab.n5.Compression;
 import org.janelia.saalfeldlab.n5.Compression.CompressionType;
 import org.janelia.saalfeldlab.n5.DataBlock;
 import org.janelia.saalfeldlab.n5.DataType;
@@ -62,7 +63,7 @@ import ch.systemsx.cisd.hdf5.IHDF5Reader;
  */
 public class N5HDF5Reader implements N5Reader {
 
-    	/**
+	/**
 	 * SemVer version of this N5-HDF5 spec.
 	 */
 	public static final Version VERSION = new Version(VersionUtils.getVersionFromPOM(N5HDF5Reader.class, "org.janelia.saalfeldlab", "n5-hdf5"));
@@ -71,22 +72,31 @@ public class N5HDF5Reader implements N5Reader {
 
 	protected final int[] defaultBlockSize;
 
+	protected boolean overrideBlockSize = false;
+
 	/**
 	 * Opens an {@link N5HDF5Reader} for a given HDF5 file.
 	 *
-	 * @param reader HDF5 reader
+	 * @param reader
+	 *            HDF5 reader
+	 * @param overrideBlockSize
+	 *            true if you want this {@link N5HDF5Reader} to use the
+	 *            defaultBlockSize instead of the chunk-size for reading
+	 *            datasets
 	 * @param defaultBlockSize
-	 * 				for all dimensions > defaultBlockSize.length, and for all
-	 *              dimensions with defaultBlockSize[i] <= 0, the size of the
-	 *              dataset will be used
+	 *            for all dimensions > defaultBlockSize.length, and for all
+	 *            dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *            dataset will be used
 	 * @throws IOException
 	 */
-	public N5HDF5Reader(final IHDF5Reader reader, final int... defaultBlockSize) throws IOException {
+	public N5HDF5Reader(final IHDF5Reader reader, final boolean overrideBlockSize, final int... defaultBlockSize) throws IOException {
 
 		this.reader = reader;
 		final Version version = getVersion();
 		if (!VERSION.isCompatible(version))
 			throw new IOException("Incompatible N5-HDF5 version " + version + " (this is " + VERSION + ").");
+
+		this.overrideBlockSize = overrideBlockSize;
 
 		if (defaultBlockSize == null)
 			this.defaultBlockSize = new int[0];
@@ -97,11 +107,48 @@ public class N5HDF5Reader implements N5Reader {
 	/**
 	 * Opens an {@link N5HDF5Reader} for a given HDF5 file.
 	 *
-	 * @param hdf5Path HDF5 file name
+	 * @param reader
+	 *            HDF5 reader
 	 * @param defaultBlockSize
-	 * 				for all dimensions > defaultBlockSize.length, and for all
-	 *              dimensions with defaultBlockSize[i] <= 0, the size of the
-	 *              dataset will be used
+	 *            for all dimensions > defaultBlockSize.length, and for all
+	 *            dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *            dataset will be used
+	 * @throws IOException
+	 */
+	public N5HDF5Reader(final IHDF5Reader reader, final int... defaultBlockSize) throws IOException {
+
+		this(reader, false, defaultBlockSize);
+	}
+
+	/**
+	 * Opens an {@link N5HDF5Reader} for a given HDF5 file.
+	 *
+	 * @param hdf5Path
+	 *            HDF5 file name
+	 * @param overrideBlockSize
+	 *            true if you want this {@link N5HDF5Reader} to use the
+	 *            defaultBlockSize instead of the chunk-size for reading
+	 *            datasets
+	 * @param defaultBlockSize
+	 *            for all dimensions > defaultBlockSize.length, and for all
+	 *            dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *            dataset will be used
+	 * @throws IOException
+	 */
+	public N5HDF5Reader(final String hdf5Path, final boolean overrideBlockSize, final int... defaultBlockSize) throws IOException {
+
+		this(HDF5Factory.openForReading(hdf5Path), overrideBlockSize, defaultBlockSize);
+	}
+
+	/**
+	 * Opens an {@link N5HDF5Reader} for a given HDF5 file.
+	 *
+	 * @param hdf5Path
+	 *            HDF5 file name
+	 * @param defaultBlockSize
+	 *            for all dimensions > defaultBlockSize.length, and for all
+	 *            dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *            dataset will be used
 	 * @throws IOException
 	 */
 	public N5HDF5Reader(final String hdf5Path, final int... defaultBlockSize) throws IOException {
@@ -112,7 +159,8 @@ public class N5HDF5Reader implements N5Reader {
 	@Override
 	public boolean exists(String pathName) {
 
-		if (pathName.equals("")) pathName = "/";
+		if (pathName.equals(""))
+			pathName = "/";
 
 		return reader.exists(pathName);
 	}
@@ -120,7 +168,8 @@ public class N5HDF5Reader implements N5Reader {
 	@Override
 	public String[] list(String pathName) {
 
-		if (pathName.equals("")) pathName = "/";
+		if (pathName.equals(""))
+			pathName = "/";
 
 		final List<String> members = reader.object().getGroupMembers(pathName);
 		return members.toArray(new String[members.size()]);
@@ -130,10 +179,45 @@ public class N5HDF5Reader implements N5Reader {
 	@Override
 	public <T> T getAttribute(String pathName, final String key, final Class<T> clazz) throws IOException {
 
-		if (pathName.equals("")) pathName = "/";
+		if (pathName.equals(""))
+			pathName = "/";
 
 		if (!reader.exists(pathName))
 			return null;
+
+		if (key.equals("dimensions") && long[].class.isAssignableFrom(clazz)) {
+			final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
+			final long[] dimensions = datasetInfo.getDimensions();
+			reorder(dimensions);
+			return (T)dimensions;
+		}
+
+		if (key.equals("blockSize") && int[].class.isAssignableFrom(clazz)) {
+			final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
+			final long[] dimensions = datasetInfo.getDimensions();
+			int[] blockSize = overrideBlockSize ? null : datasetInfo.tryGetChunkSizes();
+			if (blockSize != null)
+				reorder(blockSize);
+			else {
+				blockSize = new int[dimensions.length];
+				for (int i = 0; i < blockSize.length; ++i) {
+					if (i >= defaultBlockSize.length || defaultBlockSize[i] <= 0)
+						blockSize[i] = (int)dimensions[i];
+					else
+						blockSize[i] = defaultBlockSize[i];
+				}
+			}
+			return (T)blockSize;
+		}
+
+		if (key.equals("dataType") && DataType.class.isAssignableFrom(clazz)) {
+
+			final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
+			return (T)getDataType(datasetInfo);
+		}
+
+		if (key.equals("compression") && Compression.class.isAssignableFrom(clazz))
+			return (T)new RawCompression();
 
 		if (!reader.object().hasAttribute(pathName, key))
 			return null;
@@ -142,56 +226,56 @@ public class N5HDF5Reader implements N5Reader {
 		final Class<?> type = attributeInfo.tryGetJavaType();
 		if (type.isAssignableFrom(long[].class))
 			if (attributeInfo.isSigned())
-				return (T) reader.int64().getArrayAttr(pathName, key);
+				return (T)reader.int64().getArrayAttr(pathName, key);
 			else
-				return (T) reader.uint64().getArrayAttr(pathName, key);
+				return (T)reader.uint64().getArrayAttr(pathName, key);
 		if (type.isAssignableFrom(int[].class))
 			if (attributeInfo.isSigned())
-				return (T) reader.int32().getArrayAttr(pathName, key);
+				return (T)reader.int32().getArrayAttr(pathName, key);
 			else
-				return (T) reader.uint32().getArrayAttr(pathName, key);
+				return (T)reader.uint32().getArrayAttr(pathName, key);
 		if (type.isAssignableFrom(short[].class))
 			if (attributeInfo.isSigned())
-				return (T) reader.int16().getArrayAttr(pathName, key);
+				return (T)reader.int16().getArrayAttr(pathName, key);
 			else
-				return (T) reader.uint16().getArrayAttr(pathName, key);
+				return (T)reader.uint16().getArrayAttr(pathName, key);
 		if (type.isAssignableFrom(byte[].class)) {
 			if (attributeInfo.isSigned())
-				return (T) reader.int8().getArrayAttr(pathName, key);
+				return (T)reader.int8().getArrayAttr(pathName, key);
 			else
-				return (T) reader.uint8().getArrayAttr(pathName, key);
+				return (T)reader.uint8().getArrayAttr(pathName, key);
 		} else if (type.isAssignableFrom(double[].class))
-			return (T) reader.float64().getArrayAttr(pathName, key);
+			return (T)reader.float64().getArrayAttr(pathName, key);
 		else if (type.isAssignableFrom(float[].class))
-			return (T) reader.float32().getArrayAttr(pathName, key);
+			return (T)reader.float32().getArrayAttr(pathName, key);
 		else if (type.isAssignableFrom(String[].class))
-			return (T) reader.string().getArrayAttr(pathName, key);
+			return (T)reader.string().getArrayAttr(pathName, key);
 		if (type.isAssignableFrom(long.class)) {
 			if (attributeInfo.isSigned())
-				return (T) new Long(reader.int64().getAttr(pathName, key));
+				return (T)new Long(reader.int64().getAttr(pathName, key));
 			else
-				return (T) new Long(reader.uint64().getAttr(pathName, key));
+				return (T)new Long(reader.uint64().getAttr(pathName, key));
 		} else if (type.isAssignableFrom(int.class)) {
 			if (attributeInfo.isSigned())
-				return (T) new Integer(reader.int32().getAttr(pathName, key));
+				return (T)new Integer(reader.int32().getAttr(pathName, key));
 			else
-				return (T) new Integer(reader.uint32().getAttr(pathName, key));
+				return (T)new Integer(reader.uint32().getAttr(pathName, key));
 		} else if (type.isAssignableFrom(short.class)) {
 			if (attributeInfo.isSigned())
-				return (T) new Short(reader.int16().getAttr(pathName, key));
+				return (T)new Short(reader.int16().getAttr(pathName, key));
 			else
-				return (T) new Short(reader.uint16().getAttr(pathName, key));
+				return (T)new Short(reader.uint16().getAttr(pathName, key));
 		} else if (type.isAssignableFrom(byte.class)) {
 			if (attributeInfo.isSigned())
-				return (T) new Byte(reader.int8().getAttr(pathName, key));
+				return (T)new Byte(reader.int8().getAttr(pathName, key));
 			else
-				return (T) new Byte(reader.uint8().getAttr(pathName, key));
+				return (T)new Byte(reader.uint8().getAttr(pathName, key));
 		} else if (type.isAssignableFrom(double.class))
-			return (T) new Double(reader.float64().getAttr(pathName, key));
+			return (T)new Double(reader.float64().getAttr(pathName, key));
 		else if (type.isAssignableFrom(float.class))
-			return (T) new Float(reader.float32().getAttr(pathName, key));
+			return (T)new Float(reader.float32().getAttr(pathName, key));
 		else if (type.isAssignableFrom(String.class))
-			return (T) new String(reader.string().getAttr(pathName, key));
+			return (T)new String(reader.string().getAttr(pathName, key));
 
 		System.err.println("Reading attributes of type " + attributeInfo + " not yet implemented.");
 		return null;
@@ -255,10 +339,10 @@ public class N5HDF5Reader implements N5Reader {
 	}
 
 	/**
-	 * Crops the dimensions of a {@link DataBlock} at a given offset to fit
-	 * into an interval of given dimensions.  Fills long and int version of
-	 * cropped block size.  Also calculates the grid raster position assuming
-	 * that the offset is divisible by block size without remainder.
+	 * Crops the dimensions of a {@link DataBlock} at a given offset to fit into
+	 * an interval of given dimensions. Fills long and int version of cropped
+	 * block size. Also calculates the grid raster position assuming that the
+	 * offset is divisible by block size without remainder.
 	 *
 	 * @param gridPosition
 	 * @param dimensions
@@ -274,24 +358,25 @@ public class N5HDF5Reader implements N5Reader {
 			final long[] offset) {
 
 		for (int d = 0; d < dimensions.length; ++d) {
-			croppedBlockSize[d] = (int) Math.min(blockSize[d], dimensions[d] - offset[d]);
+			croppedBlockSize[d] = (int)Math.min(blockSize[d], dimensions[d] - offset[d]);
 			offset[d] = gridPosition[d] * blockSize[d];
 		}
 	}
 
 	/**
-	 * Always returns {@link CompressionType#RAW} because I could not yet find
-	 * a meaningful way to get information about the compression of a dataset.
+	 * Always returns {@link CompressionType#RAW} because I could not yet find a
+	 * meaningful way to get information about the compression of a dataset.
 	 */
 	@Override
 	public DatasetAttributes getDatasetAttributes(String pathName) {
 
-		if (pathName.equals("")) pathName = "/";
+		if (pathName.equals(""))
+			pathName = "/";
 
 		final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
 		final long[] dimensions = datasetInfo.getDimensions();
 		reorder(dimensions);
-		int[] blockSize = datasetInfo.tryGetChunkSizes();
+		int[] blockSize = overrideBlockSize ? null : datasetInfo.tryGetChunkSizes();
 
 		if (blockSize != null)
 			reorder(blockSize);
@@ -318,7 +403,8 @@ public class N5HDF5Reader implements N5Reader {
 			final DatasetAttributes datasetAttributes,
 			final long[] gridPosition) throws IOException {
 
-		if (pathName.equals("")) pathName = "/";
+		if (pathName.equals(""))
+			pathName = "/";
 
 		final long[] hdf5Dimensions = datasetAttributes.getDimensions().clone();
 		reorder(hdf5Dimensions);
@@ -389,7 +475,8 @@ public class N5HDF5Reader implements N5Reader {
 	@Override
 	public boolean datasetExists(String pathName) {
 
-		if (pathName.equals("")) pathName = "/";
+		if (pathName.equals(""))
+			pathName = "/";
 
 		return reader.exists(pathName) && reader.object().isDataSet(pathName);
 	}
