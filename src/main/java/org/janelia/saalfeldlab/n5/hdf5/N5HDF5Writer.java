@@ -189,19 +189,19 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 		else if (attribute instanceof String)
 			writer.string().setAttr(pathName, key, (String)attribute);
 		else if (attribute instanceof byte[])
-			writer.int8().setArrayAttr(pathName, key, (byte[])attribute);
+			writer.int8().setArrayAttr(pathName, key, reorder((byte[])attribute));
 		else if (attribute instanceof short[])
-			writer.int16().setArrayAttr(pathName, key, (short[])attribute);
+			writer.int16().setArrayAttr(pathName, key, reorder((short[])attribute));
 		else if (attribute instanceof int[])
-			writer.int32().setArrayAttr(pathName, key, (int[])attribute);
+			writer.int32().setArrayAttr(pathName, key, reorder((int[])attribute));
 		else if (attribute instanceof long[])
-			writer.int64().setArrayAttr(pathName, key, (long[])attribute);
+			writer.int64().setArrayAttr(pathName, key, reorder((long[])attribute));
 		else if (attribute instanceof float[])
-			writer.float32().setArrayAttr(pathName, key, (float[])attribute);
+			writer.float32().setArrayAttr(pathName, key, reorder((float[])attribute));
 		else if (attribute instanceof double[])
-			writer.float64().setArrayAttr(pathName, key, (double[])attribute);
+			writer.float64().setArrayAttr(pathName, key, reorder((double[])attribute));
 		else if (attribute instanceof String[])
-			writer.string().setArrayAttr(pathName, key, (String[])attribute);
+			writer.string().setArrayAttr(pathName, key, reorder((String[])attribute));
 		else
 			throw new IOException("N5-HDF5: attributes of type " + attribute.getClass() + " not yet supported.");
 	}

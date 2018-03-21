@@ -188,8 +188,7 @@ public class N5HDF5Reader implements N5Reader {
 		if (key.equals("dimensions") && long[].class.isAssignableFrom(clazz)) {
 			final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
 			final long[] dimensions = datasetInfo.getDimensions();
-			reorder(dimensions);
-			return (T)dimensions;
+			return (T)reorder(dimensions);
 		}
 
 		if (key.equals("blockSize") && int[].class.isAssignableFrom(clazz)) {
@@ -226,30 +225,30 @@ public class N5HDF5Reader implements N5Reader {
 		final Class<?> type = attributeInfo.tryGetJavaType();
 		if (type.isAssignableFrom(long[].class))
 			if (attributeInfo.isSigned())
-				return (T)reader.int64().getArrayAttr(pathName, key);
+				return (T)reorder(reader.int64().getArrayAttr(pathName, key));
 			else
-				return (T)reader.uint64().getArrayAttr(pathName, key);
+				return (T)reorder(reader.uint64().getArrayAttr(pathName, key));
 		if (type.isAssignableFrom(int[].class))
 			if (attributeInfo.isSigned())
-				return (T)reader.int32().getArrayAttr(pathName, key);
+				return (T)reorder(reader.int32().getArrayAttr(pathName, key));
 			else
-				return (T)reader.uint32().getArrayAttr(pathName, key);
+				return (T)reorder(reader.uint32().getArrayAttr(pathName, key));
 		if (type.isAssignableFrom(short[].class))
 			if (attributeInfo.isSigned())
-				return (T)reader.int16().getArrayAttr(pathName, key);
+				return (T)reorder(reader.int16().getArrayAttr(pathName, key));
 			else
-				return (T)reader.uint16().getArrayAttr(pathName, key);
+				return (T)reorder(reader.uint16().getArrayAttr(pathName, key));
 		if (type.isAssignableFrom(byte[].class)) {
 			if (attributeInfo.isSigned())
-				return (T)reader.int8().getArrayAttr(pathName, key);
+				return (T)reorder(reader.int8().getArrayAttr(pathName, key));
 			else
-				return (T)reader.uint8().getArrayAttr(pathName, key);
+				return (T)reorder(reader.uint8().getArrayAttr(pathName, key));
 		} else if (type.isAssignableFrom(double[].class))
-			return (T)reader.float64().getArrayAttr(pathName, key);
+			return (T)reorder(reader.float64().getArrayAttr(pathName, key));
 		else if (type.isAssignableFrom(float[].class))
-			return (T)reader.float32().getArrayAttr(pathName, key);
+			return (T)reorder(reader.float32().getArrayAttr(pathName, key));
 		else if (type.isAssignableFrom(String[].class))
-			return (T)reader.string().getArrayAttr(pathName, key);
+			return (T)reorder(reader.string().getArrayAttr(pathName, key));
 		if (type.isAssignableFrom(long.class)) {
 			if (attributeInfo.isSigned())
 				return (T)new Long(reader.int64().getAttr(pathName, key));
@@ -314,7 +313,7 @@ public class N5HDF5Reader implements N5Reader {
 		return null;
 	}
 
-	protected static void reorder(final long[] array) {
+	protected static long[] reorder(final long[] array) {
 
 		long a;
 		final int max = array.length - 1;
@@ -324,9 +323,10 @@ public class N5HDF5Reader implements N5Reader {
 			array[i] = array[j];
 			array[j] = a;
 		}
+		return array;
 	}
 
-	protected static void reorder(final int[] array) {
+	protected static int[] reorder(final int[] array) {
 
 		int a;
 		final int max = array.length - 1;
@@ -336,6 +336,85 @@ public class N5HDF5Reader implements N5Reader {
 			array[i] = array[j];
 			array[j] = a;
 		}
+		return array;
+	}
+
+	protected static short[] reorder(final short[] array) {
+
+		short a;
+		final int max = array.length - 1;
+		for (int i = (max - 1) / 2; i >= 0; --i) {
+			final int j = max - i;
+			a = array[i];
+			array[i] = array[j];
+			array[j] = a;
+		}
+		return array;
+	}
+
+	protected static byte[] reorder(final byte[] array) {
+
+		byte a;
+		final int max = array.length - 1;
+		for (int i = (max - 1) / 2; i >= 0; --i) {
+			final int j = max - i;
+			a = array[i];
+			array[i] = array[j];
+			array[j] = a;
+		}
+		return array;
+	}
+
+	protected static boolean[] reorder(final boolean[] array) {
+
+		boolean a;
+		final int max = array.length - 1;
+		for (int i = (max - 1) / 2; i >= 0; --i) {
+			final int j = max - i;
+			a = array[i];
+			array[i] = array[j];
+			array[j] = a;
+		}
+		return array;
+	}
+
+	protected static double[] reorder(final double[] array) {
+
+		double a;
+		final int max = array.length - 1;
+		for (int i = (max - 1) / 2; i >= 0; --i) {
+			final int j = max - i;
+			a = array[i];
+			array[i] = array[j];
+			array[j] = a;
+		}
+		return array;
+	}
+
+	protected static float[] reorder(final float[] array) {
+
+		float a;
+		final int max = array.length - 1;
+		for (int i = (max - 1) / 2; i >= 0; --i) {
+			final int j = max - i;
+			a = array[i];
+			array[i] = array[j];
+			array[j] = a;
+		}
+		return array;
+	}
+
+	protected static <T> T[] reorder(final T[] array) {
+
+		T a;
+		final int max = array.length - 1;
+		for (int i = (max - 1) / 2; i >= 0; --i) {
+			final int j = max - i;
+			a = array[i];
+			array[i] = array[j];
+			array[j] = a;
+		}
+		return array;
 	}
 
 	/**
