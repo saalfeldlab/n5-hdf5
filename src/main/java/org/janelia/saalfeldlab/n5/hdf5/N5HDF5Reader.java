@@ -166,13 +166,17 @@ public class N5HDF5Reader implements N5Reader {
 	}
 
 	@Override
-	public String[] list(String pathName) {
+	public String[] list(String pathName) throws IOException {
 
 		if (pathName.equals(""))
 			pathName = "/";
 
-		final List<String> members = reader.object().getGroupMembers(pathName);
-		return members.toArray(new String[members.size()]);
+		try {
+			final List<String> members = reader.object().getGroupMembers(pathName);
+			return members.toArray(new String[members.size()]);
+		} catch (final Exception e) {
+			throw new IOException(e);
+		}
 	}
 
 	@SuppressWarnings("unchecked")
