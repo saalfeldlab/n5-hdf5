@@ -100,13 +100,16 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 		final DataType dataType = datasetAttributes.getDataType();
 		final Compression compression = datasetAttributes.getCompression();
 		final HDF5IntStorageFeatures intCompression;
+		final HDF5IntStorageFeatures uintCompression;
 		final HDF5FloatStorageFeatures floatCompression;
 		if (compression instanceof RawCompression) {
 			floatCompression = HDF5FloatStorageFeatures.FLOAT_NO_COMPRESSION;
 			intCompression = HDF5IntStorageFeatures.INT_NO_COMPRESSION;
+			uintCompression = HDF5IntStorageFeatures.INT_NO_COMPRESSION_UNSIGNED;
 		} else {
 			floatCompression = HDF5FloatStorageFeatures.FLOAT_SHUFFLE_DEFLATE;
 			intCompression = HDF5IntStorageFeatures.INT_AUTO_SCALING_DEFLATE;
+			uintCompression = HDF5IntStorageFeatures.INT_AUTO_SCALING_DEFLATE_UNSIGNED;
 		}
 
 		if (writer.exists(pathName))
@@ -119,16 +122,16 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 
 		switch (dataType) {
 		case UINT8:
-			writer.uint8().createMDArray(pathName, hdf5Dimensions, hdf5BlockSize, intCompression);
+			writer.uint8().createMDArray(pathName, hdf5Dimensions, hdf5BlockSize, uintCompression);
 			break;
 		case UINT16:
-			writer.uint16().createMDArray(pathName, hdf5Dimensions, hdf5BlockSize, intCompression);
+			writer.uint16().createMDArray(pathName, hdf5Dimensions, hdf5BlockSize, uintCompression);
 			break;
 		case UINT32:
-			writer.uint32().createMDArray(pathName, hdf5Dimensions, hdf5BlockSize, intCompression);
+			writer.uint32().createMDArray(pathName, hdf5Dimensions, hdf5BlockSize, uintCompression);
 			break;
 		case UINT64:
-			writer.uint64().createMDArray(pathName, hdf5Dimensions, hdf5BlockSize, intCompression);
+			writer.uint64().createMDArray(pathName, hdf5Dimensions, hdf5BlockSize, uintCompression);
 			break;
 		case INT8:
 			writer.int8().createMDArray(pathName, hdf5Dimensions, hdf5BlockSize, intCompression);
