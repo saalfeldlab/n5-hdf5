@@ -362,8 +362,8 @@ public class N5HDF5Reader implements N5Reader {
 			final long[] offset) {
 
 		for (int d = 0; d < dimensions.length; ++d) {
-			croppedBlockSize[d] = (int)Math.min(blockSize[d], dimensions[d] - offset[d]);
 			offset[d] = gridPosition[d] * blockSize[d];
+			croppedBlockSize[d] = (int)Math.min(blockSize[d], dimensions[d] - offset[d]);
 		}
 	}
 
@@ -427,6 +427,7 @@ public class N5HDF5Reader implements N5Reader {
 
 		final int[] croppedBlockSize = hdf5CroppedBlockSize.clone();
 		reorder(croppedBlockSize);
+
 		final DataBlock<?> dataBlock;
 		switch (datasetAttributes.getDataType()) {
 		case UINT8:
