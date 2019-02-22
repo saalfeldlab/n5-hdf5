@@ -54,7 +54,6 @@ public class N5HDF5Test extends AbstractN5Test {
 	@Before
 	public void before() throws IOException {
 
-		Files.createDirectories(Paths.get(testDirPath).getParent());
 		after();
 		n5 = createN5Writer();
 	}
@@ -83,6 +82,7 @@ public class N5HDF5Test extends AbstractN5Test {
 	@Override
 	protected N5Writer createN5Writer() throws IOException {
 
+		Files.createDirectories(Paths.get(testDirPath).getParent());
 		hdf5Writer = HDF5Factory.open(testDirPath);
 		return new N5HDF5Writer(hdf5Writer);
 	}
