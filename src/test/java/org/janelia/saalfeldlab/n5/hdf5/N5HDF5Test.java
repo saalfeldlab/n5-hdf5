@@ -19,6 +19,8 @@ package org.janelia.saalfeldlab.n5.hdf5;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import org.janelia.saalfeldlab.n5.AbstractN5Test;
 import org.janelia.saalfeldlab.n5.Compression;
@@ -52,6 +54,7 @@ public class N5HDF5Test extends AbstractN5Test {
 	@Before
 	public void before() throws IOException {
 
+		Files.createDirectories(Paths.get(testDirPath).getParent());
 		after();
 		n5 = createN5Writer();
 	}
