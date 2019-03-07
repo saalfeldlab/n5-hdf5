@@ -18,6 +18,7 @@ package org.janelia.saalfeldlab.n5.hdf5;
 
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -36,6 +37,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
 import ch.systemsx.cisd.hdf5.IHDF5Writer;
@@ -44,6 +46,7 @@ import ch.systemsx.cisd.hdf5.IHDF5Writer;
  *
  * @author Stephan Saalfeld
  * @author Igor Pisarev
+ * @author Philipp Hanslovsky
  */
 public class N5HDF5Test extends AbstractN5Test {
 
@@ -131,5 +134,51 @@ public class N5HDF5Test extends AbstractN5Test {
 		Assert.assertArrayEquals(defaultBlockSize, overriddenAttributes.getBlockSize());
 
 		hdf5Reader.close();
+	}
+
+	@Test
+	public void testDefaultBlockSizeGetter() throws IOException {
+		// do not pass array
+		{
+			try (final N5HDF5Reader h5  = new N5HDF5Writer(testDirPath)) {
+				Assert.assertArrayEquals(new int[]{}, h5.getDefaultBlockSizeCopy());
+			}
+		}
+		// pass array
+		{
+			try (final N5HDF5Reader h5 = new N5HDF5Writer(testDirPath, defaultBlockSize)) {
+				Assert.assertArrayEquals(defaultBlockSize, h5.getDefaultBlockSizeCopy());
+			}
+		}
+	}
+
+	@Test
+	public void testOverrideBlockSizeGetter() throws IOException {
+		// default behavior
+		{
+			try (final N5HDF5Reader h5 = new N5HDF5Writer(testDirPath)) {
+				Assert.assertFalse(h5.doesOverrideBlockSize());
+			}
+		}
+		// overrideBlockSize == false
+		{
+			try (final N5HDF5Reader h5 = new N5HDF5Reader(testDirPath, false)) {
+				Assert.assertFalse(h5.doesOverrideBlockSize());
+			}
+		}
+		// overrideBlockSize == false
+		{
+			try (final N5HDF5Reader h5 = new N5HDF5Reader(testDirPath, true)) {
+				Assert.assertTrue(h5.doesOverrideBlockSize());
+			}
+		}
+	}
+
+	@Test
+	public void testFilenameGetter() throws IOException {
+		try (final N5HDF5Reader h5  = new N5HDF5Writer(testDirPath)) {
+			Assert.assertEquals(new File(testDirPath), h5.getFilename());
+		}
+
 	}
 }
