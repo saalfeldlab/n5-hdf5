@@ -25,6 +25,8 @@
  */
 package org.janelia.saalfeldlab.n5.hdf5;
 
+import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -44,7 +46,6 @@ import org.janelia.saalfeldlab.n5.N5Reader;
 import org.janelia.saalfeldlab.n5.RawCompression;
 import org.janelia.saalfeldlab.n5.ShortArrayDataBlock;
 import org.scijava.util.VersionUtils;
-
 import ch.systemsx.cisd.base.mdarray.MDByteArray;
 import ch.systemsx.cisd.base.mdarray.MDDoubleArray;
 import ch.systemsx.cisd.base.mdarray.MDFloatArray;
@@ -60,8 +61,9 @@ import ch.systemsx.cisd.hdf5.IHDF5Reader;
  * Best effort {@link N5Reader} implementation for HDF5 files.
  *
  * @author Stephan Saalfeld
+ * @author Philipp Hanslovsky
  */
-public class N5HDF5Reader implements N5Reader {
+public class N5HDF5Reader implements N5Reader, Closeable {
 
 	/**
 	 * SemVer version of this N5-HDF5 spec.
@@ -497,8 +499,33 @@ public class N5HDF5Reader implements N5Reader {
 		return attributes;
 	}
 
+	@Override
 	public void close() {
 
 		reader.close();
+	}
+
+	/**
+	 *
+	 * @return file name of HDF5 file this reader is associated with
+	 */
+	public File getFilename() {
+		return this.reader.file().getFile();
+	}
+
+	/**
+	 *
+	 * @return a copy of the default block size of this reader
+	 */
+	public int[] getDefaultBlockSizeCopy() {
+		return defaultBlockSize.clone();
+	}
+
+	/**
+	 *
+	 * @return {@code true} if this reader overrides block size found in an HDF5 dataset, {@code false} otherwise
+	 */
+	public boolean doesOverrideBlockSize() {
+		return this.overrideBlockSize;
 	}
 }
