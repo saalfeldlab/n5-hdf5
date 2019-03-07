@@ -177,7 +177,9 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 		if (pathName.equals(""))
 			pathName = "/";
 
-		if (attribute instanceof Byte)
+		if (attribute instanceof Boolean)
+			writer.bool().setAttr(pathName, key, (Boolean)attribute);
+		else if (attribute instanceof Byte)
 			writer.int8().setAttr(pathName, key, (Byte)attribute);
 		else if (attribute instanceof Short)
 			writer.int16().setAttr(pathName, key, (Short)attribute);
@@ -186,7 +188,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 		else if (attribute instanceof Long)
 			writer.int64().setAttr(pathName, key, (Long)attribute);
 		else if (attribute instanceof Float)
-			writer.float32().setAttr(pathName, key, (Integer)attribute);
+			writer.float32().setAttr(pathName, key, (Float)attribute);
 		else if (attribute instanceof Double)
 			writer.float64().setAttr(pathName, key, (Double)attribute);
 		else if (attribute instanceof String)
