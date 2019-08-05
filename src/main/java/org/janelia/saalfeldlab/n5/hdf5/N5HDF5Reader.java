@@ -528,4 +528,9 @@ public class N5HDF5Reader implements N5Reader, Closeable {
 	public boolean doesOverrideBlockSize() {
 		return this.overrideBlockSize;
 	}
+
+	@Override
+	public String toString() {
+		return String.format("%s[file=%s]", getClass().getSimpleName(), reader.file().getFile());
+	}
 }
