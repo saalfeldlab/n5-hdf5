@@ -46,6 +46,10 @@ import org.janelia.saalfeldlab.n5.N5Reader;
 import org.janelia.saalfeldlab.n5.RawCompression;
 import org.janelia.saalfeldlab.n5.ShortArrayDataBlock;
 import org.scijava.util.VersionUtils;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import ch.systemsx.cisd.base.mdarray.MDByteArray;
 import ch.systemsx.cisd.base.mdarray.MDDoubleArray;
 import ch.systemsx.cisd.base.mdarray.MDFloatArray;
@@ -60,10 +64,17 @@ import ch.systemsx.cisd.hdf5.IHDF5Reader;
 /**
  * Best effort {@link N5Reader} implementation for HDF5 files.
  *
+ * Attributes are not generally read as JSON but use HDF5 types.  That means
+ * that HDF5 files that were not generated with this library can be used
+ * properly and correctly.  Structured attributes for which no appropriate
+ * HDF5 attribute type exists are parsed as JSON strings.
+ *
  * @author Stephan Saalfeld
  * @author Philipp Hanslovsky
  */
 public class N5HDF5Reader implements N5Reader, Closeable {
+
+	protected final Gson gson;
 
 	/**
 	 * SemVer version of this N5-HDF5 spec.
@@ -85,13 +96,18 @@ public class N5HDF5Reader implements N5Reader, Closeable {
 	 *            true if you want this {@link N5HDF5Reader} to use the
 	 *            defaultBlockSize instead of the chunk-size for reading
 	 *            datasets
+	 * @param gsonBuilder
+	 *            custom {@link GsonBuilder} to support custom attributes
 	 * @param defaultBlockSize
 	 *            for all dimensions > defaultBlockSize.length, and for all
 	 *            dimensions with defaultBlockSize[i] <= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
 	 */
-	public N5HDF5Reader(final IHDF5Reader reader, final boolean overrideBlockSize, final int... defaultBlockSize) throws IOException {
+	public N5HDF5Reader(final IHDF5Reader reader, final boolean overrideBlockSize, final GsonBuilder gsonBuilder, final int... defaultBlockSize) throws IOException {
+
+		gsonBuilder.disableHtmlEscaping();
+		this.gson = gsonBuilder.create();
 
 		this.reader = reader;
 		final Version version = getVersion();
@@ -104,6 +120,26 @@ public class N5HDF5Reader implements N5Reader, Closeable {
 			this.defaultBlockSize = new int[0];
 		else
 			this.defaultBlockSize = defaultBlockSize;
+	}
+
+	/**
+	 * Opens an {@link N5HDF5Reader} for a given HDF5 file.
+	 *
+	 * @param reader
+	 *            HDF5 reader
+	 * @param overrideBlockSize
+	 *            true if you want this {@link N5HDF5Reader} to use the
+	 *            defaultBlockSize instead of the chunk-size for reading
+	 *            datasets
+	 * @param defaultBlockSize
+	 *            for all dimensions > defaultBlockSize.length, and for all
+	 *            dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *            dataset will be used
+	 * @throws IOException
+	 */
+	public N5HDF5Reader(final IHDF5Reader reader, final boolean overrideBlockSize, final int... defaultBlockSize) throws IOException {
+
+		this(reader, overrideBlockSize, new GsonBuilder(), defaultBlockSize);
 	}
 
 	/**
@@ -280,8 +316,13 @@ public class N5HDF5Reader implements N5Reader, Closeable {
 			return (T)new Double(reader.float64().getAttr(pathName, key));
 		else if (type.isAssignableFrom(float.class))
 			return (T)new Float(reader.float32().getAttr(pathName, key));
-		else if (type.isAssignableFrom(String.class))
-			return (T)new String(reader.string().getAttr(pathName, key));
+		else if (type.isAssignableFrom(String.class)) {
+			final String attributeString = reader.string().getAttr(pathName, key);
+			if (clazz.isAssignableFrom(String.class))
+				return (T)attributeString;
+			else
+				return gson.fromJson(attributeString, clazz);
+		}
 
 		System.err.println("Reading attributes of type " + attributeInfo + " not yet implemented.");
 		return null;
@@ -488,6 +529,9 @@ public class N5HDF5Reader implements N5Reader, Closeable {
 		return reader.exists(pathName) && reader.object().isDataSet(pathName);
 	}
 
+	/**
+	 * Structured attributes that are stored as JSON will be classified as String.class.
+	 */
 	@Override
 	public Map<String, Class<?>> listAttributes(final String pathName) throws IOException {
 

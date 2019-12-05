@@ -16,12 +16,14 @@
  */
 package org.janelia.saalfeldlab.n5.hdf5;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 
 import org.janelia.saalfeldlab.n5.AbstractN5Test;
 import org.janelia.saalfeldlab.n5.Compression;
@@ -36,7 +38,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-
 
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
@@ -53,6 +54,27 @@ public class N5HDF5Test extends AbstractN5Test {
 	private static String testDirPath = System.getProperty("user.home") + "/tmp/n5-test.hdf5";
 	private static int[] defaultBlockSize = new int[]{5, 6, 7};
 	private static IHDF5Writer hdf5Writer;
+
+	public static class Structured {
+
+		public String name = "";
+		public int id = 0;
+		public double[] data = new double[0];
+
+		@Override
+		public boolean equals(Object other) {
+
+			if (other instanceof Structured) {
+
+				Structured otherStructured = (Structured)other;
+				return
+						name.equals(otherStructured.name) &&
+						id == otherStructured.id &&
+						Arrays.equals(data, otherStructured.data);
+			}
+			return false;
+		}
+	}
 
 	@Before
 	public void before() throws IOException {
@@ -180,5 +202,21 @@ public class N5HDF5Test extends AbstractN5Test {
 			Assert.assertEquals(new File(testDirPath), h5.getFilename());
 		}
 
+	}
+
+	@Test
+	public void testStructuredAttributes() throws IOException {
+
+		Structured attribute = new Structured();
+		attribute.name = "myName";
+		attribute.id = 20;
+		attribute.data = new double[] {1, 2, 3, 4};
+
+		n5.createGroup("/structuredAttributes");
+		n5.setAttribute("/structuredAttributes", "myAttribute", attribute);
+		Structured readAttribute = n5.getAttribute("/structuredAttributes", "myAttribute", Structured.class);
+		assertEquals(attribute, readAttribute);
+
+		n5.remove("/structuredAttributes");
 	}
 }

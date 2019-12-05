@@ -172,7 +172,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	public <T> void setAttribute(
 			String pathName,
 			final String key,
-			final T attribute) throws IOException {
+			final T attribute) {
 
 		if (pathName.equals(""))
 			pathName = "/";
@@ -210,7 +210,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 		else if (attribute instanceof String[])
 			writer.string().setArrayAttr(pathName, key, (String[])attribute);
 		else
-			throw new IOException("N5-HDF5: attributes of type " + attribute.getClass() + " not yet supported.");
+			writer.string().setAttr(pathName, key, gson.toJson(attribute));
 	}
 
 	@Override
