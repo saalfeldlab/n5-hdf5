@@ -9,6 +9,7 @@ Not everything is possible because of the philosophical differences between N5 a
 * non-overlapping chunks
 * raw and gzip compression
 * attributes of primitive types and Strings and arrays of primitive types and strings
+* custom attributes that can be encoded as JSON
 
 ## Doesn't work
 
@@ -16,5 +17,4 @@ Not everything is possible because of the philosophical differences between N5 a
 * custom compression
 * varlength chunks
 * multisets or other custom types
-* custom attributes
 * parallel writing (it's HDF5)
