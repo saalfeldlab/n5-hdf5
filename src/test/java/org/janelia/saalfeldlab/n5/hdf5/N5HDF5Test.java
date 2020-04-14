@@ -25,15 +25,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
-import org.janelia.saalfeldlab.n5.AbstractN5Test;
-import org.janelia.saalfeldlab.n5.Compression;
-import org.janelia.saalfeldlab.n5.DataType;
-import org.janelia.saalfeldlab.n5.DatasetAttributes;
-import org.janelia.saalfeldlab.n5.GzipCompression;
-import org.janelia.saalfeldlab.n5.N5Reader;
+import org.janelia.saalfeldlab.n5.*;
 import org.janelia.saalfeldlab.n5.N5Reader.Version;
-import org.janelia.saalfeldlab.n5.N5Writer;
-import org.janelia.saalfeldlab.n5.RawCompression;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -116,6 +109,27 @@ public class N5HDF5Test extends AbstractN5Test {
 	@Test
 	@Ignore("HDF5 does not currently support mode 1 data blocks.")
 	public void testMode1WriteReadByteBlock() {
+	}
+
+	@Override
+	protected boolean testDeleteIsBlockDeleted(final DataBlock<?> dataBlock) {
+
+		// deletion is not supported in HDF5, so the block is overwritten with zeroes instead
+
+		if (dataBlock instanceof ByteArrayDataBlock)
+			return Arrays.equals((byte[]) dataBlock.getData(), new byte[dataBlock.getNumElements()]);
+		else if (dataBlock instanceof ShortArrayDataBlock)
+			return Arrays.equals((short[]) dataBlock.getData(), new short[dataBlock.getNumElements()]);
+		else if (dataBlock instanceof IntArrayDataBlock)
+			return Arrays.equals((int[]) dataBlock.getData(), new int[dataBlock.getNumElements()]);
+		else if (dataBlock instanceof LongArrayDataBlock)
+			return Arrays.equals((long[]) dataBlock.getData(), new long[dataBlock.getNumElements()]);
+		else if (dataBlock instanceof FloatArrayDataBlock)
+			return Arrays.equals((float[]) dataBlock.getData(), new float[dataBlock.getNumElements()]);
+		else if (dataBlock instanceof DoubleArrayDataBlock)
+			return Arrays.equals((double[]) dataBlock.getData(), new double[dataBlock.getNumElements()]);
+
+		return false;
 	}
 
 	@Override

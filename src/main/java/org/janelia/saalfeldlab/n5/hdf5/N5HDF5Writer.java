@@ -31,12 +31,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.janelia.saalfeldlab.n5.Compression;
-import org.janelia.saalfeldlab.n5.DataBlock;
-import org.janelia.saalfeldlab.n5.DataType;
-import org.janelia.saalfeldlab.n5.DatasetAttributes;
-import org.janelia.saalfeldlab.n5.N5Writer;
-import org.janelia.saalfeldlab.n5.RawCompression;
+import org.janelia.saalfeldlab.n5.*;
 
 import ch.systemsx.cisd.base.mdarray.MDByteArray;
 import ch.systemsx.cisd.base.mdarray.MDDoubleArray;
@@ -291,6 +286,79 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 			writer.float64().writeMDArrayBlockWithOffset(pathName, float64TargetCell, hdf5Offset);
 			break;
 		}
+	}
+
+	@Override
+	public boolean deleteBlock(String pathName, final long[] gridPosition) throws IOException {
+
+		// deletion is not supported in HDF5, so the block is overwritten with zeroes instead
+
+		if (pathName.equals(""))
+			pathName = "/";
+
+		final DatasetAttributes datasetAttributes = getDatasetAttributes(pathName);
+
+		final long[] hdf5Dimensions = datasetAttributes.getDimensions().clone();
+		reorder(hdf5Dimensions);
+		final int[] hdf5BlockSize = datasetAttributes.getBlockSize().clone();
+		reorder(hdf5BlockSize);
+		final long[] hdf5GridPosition = gridPosition.clone();
+		reorder(hdf5GridPosition);
+		final int[] hdf5CroppedBlockSize = new int[hdf5BlockSize.length];
+		final long[] hdf5Offset = new long[hdf5GridPosition.length];
+		cropBlockSize(
+				hdf5GridPosition,
+				hdf5Dimensions,
+				hdf5BlockSize,
+				hdf5CroppedBlockSize,
+				hdf5Offset);
+
+		switch (datasetAttributes.getDataType()) {
+			case UINT8:
+				final MDByteArray uint8TargetCell = new MDByteArray(hdf5CroppedBlockSize);
+				writer.uint8().writeMDArrayBlockWithOffset(pathName, uint8TargetCell, hdf5Offset);
+				break;
+			case INT8:
+				final MDByteArray int8TargetCell = new MDByteArray(hdf5CroppedBlockSize);
+				writer.int8().writeMDArrayBlockWithOffset(pathName, int8TargetCell, hdf5Offset);
+				break;
+			case UINT16:
+				final MDShortArray uint16TargetCell = new MDShortArray(hdf5CroppedBlockSize);
+				writer.uint16().writeMDArrayBlockWithOffset(pathName, uint16TargetCell, hdf5Offset);
+				break;
+			case INT16:
+				final MDShortArray int16TargetCell = new MDShortArray(hdf5CroppedBlockSize);
+				writer.int16().writeMDArrayBlockWithOffset(pathName, int16TargetCell, hdf5Offset);
+				break;
+			case UINT32:
+				final MDIntArray uint32TargetCell = new MDIntArray(hdf5CroppedBlockSize);
+				writer.uint32().writeMDArrayBlockWithOffset(pathName, uint32TargetCell, hdf5Offset);
+				break;
+			case INT32:
+				final MDIntArray int32TargetCell = new MDIntArray(hdf5CroppedBlockSize);
+				writer.int32().writeMDArrayBlockWithOffset(pathName, int32TargetCell, hdf5Offset);
+				break;
+			case UINT64:
+				final MDLongArray uint64TargetCell = new MDLongArray(hdf5CroppedBlockSize);
+				writer.uint64().writeMDArrayBlockWithOffset(pathName, uint64TargetCell, hdf5Offset);
+				break;
+			case INT64:
+				final MDLongArray int64TargetCell = new MDLongArray(hdf5CroppedBlockSize);
+				writer.int64().writeMDArrayBlockWithOffset(pathName, int64TargetCell, hdf5Offset);
+				break;
+			case FLOAT32:
+				final MDFloatArray float32TargetCell = new MDFloatArray(hdf5CroppedBlockSize);
+				writer.float32().writeMDArrayBlockWithOffset(pathName, float32TargetCell, hdf5Offset);
+				break;
+			case FLOAT64:
+				final MDDoubleArray float64TargetCell = new MDDoubleArray(hdf5CroppedBlockSize);
+				writer.float64().writeMDArrayBlockWithOffset(pathName, float64TargetCell, hdf5Offset);
+				break;
+			default:
+				return false;
+		}
+
+		return true;
 	}
 
 	@Override
