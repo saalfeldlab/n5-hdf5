@@ -76,8 +76,6 @@
 	</ciManagement>
 
 	<properties>
-		<n5.version>2.2.0</n5.version>
-
 		<package-name>org.janelia.saalfeldlab</package-name>
 
 		<license.licenseName>bsd_2</license.licenseName>
@@ -87,6 +85,8 @@
 
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>deploy-to-scijava</releaseProfiles>
+
+		<n5.version>2.2.0</n5.version>
 	</properties>
 
 	<dependencies>
@@ -111,7 +111,7 @@
 			<groupId>org.janelia.saalfeldlab</groupId>
 			<artifactId>n5</artifactId>
 			<version>${n5.version}</version>
-			<type>test-jar</type>
+			<classifier>tests</classifier>
 			<scope>test</scope>
 		</dependency>
 
