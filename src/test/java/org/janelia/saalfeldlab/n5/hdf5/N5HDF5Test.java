@@ -71,11 +71,11 @@ public class N5HDF5Test extends AbstractN5Test {
 		public double[] data = new double[0];
 
 		@Override
-		public boolean equals(Object other) {
+		public boolean equals(final Object other) {
 
 			if (other instanceof Structured) {
 
-				Structured otherStructured = (Structured)other;
+				final Structured otherStructured = (Structured)other;
 				return
 						name.equals(otherStructured.name) &&
 						id == otherStructured.id &&
@@ -128,6 +128,12 @@ public class N5HDF5Test extends AbstractN5Test {
 	}
 
 	@Override
+	@Test
+	@Ignore("HDF5 does not currently support mode 2 data blocks and serialized objects.")
+	public void testWriteReadSerializableBlock() {
+	}
+
+	@Override
 	protected boolean testDeleteIsBlockDeleted(final DataBlock<?> dataBlock) {
 
 		// deletion is not supported in HDF5, so the block is overwritten with zeroes instead
@@ -176,7 +182,7 @@ public class N5HDF5Test extends AbstractN5Test {
 		hdf5Writer = null;
 		n5 = null;
 
-		IHDF5Reader hdf5Reader = HDF5Factory.openForReading(testDirPath);
+		final IHDF5Reader hdf5Reader = HDF5Factory.openForReading(testDirPath);
 		final N5HDF5Reader n5Reader = new N5HDF5Reader(hdf5Reader, defaultBlockSize);
 		final DatasetAttributes originalAttributes = n5Reader.getDatasetAttributes(datasetName);
 		Assert.assertArrayEquals(blockSize, originalAttributes.getBlockSize());
@@ -237,7 +243,7 @@ public class N5HDF5Test extends AbstractN5Test {
 	@Test
 	public void testStructuredAttributes() throws IOException {
 
-		Structured attribute = new Structured();
+		final Structured attribute = new Structured();
 		attribute.name = "myName";
 		attribute.id = 20;
 		attribute.data = new double[] {1, 2, 3, 4};

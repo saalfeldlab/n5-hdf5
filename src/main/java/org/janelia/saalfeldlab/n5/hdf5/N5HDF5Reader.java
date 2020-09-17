@@ -560,7 +560,7 @@ public class N5HDF5Reader implements N5Reader, Closeable {
 	public DataBlock<?> readBlock(
 			String pathName,
 			final DatasetAttributes datasetAttributes,
-			final long[] gridPosition) throws IOException {
+			final long... gridPosition) throws IOException {
 
 		if (pathName.equals(""))
 			pathName = "/";

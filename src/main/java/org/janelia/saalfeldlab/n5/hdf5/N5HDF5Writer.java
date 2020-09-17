@@ -31,7 +31,12 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.janelia.saalfeldlab.n5.*;
+import org.janelia.saalfeldlab.n5.Compression;
+import org.janelia.saalfeldlab.n5.DataBlock;
+import org.janelia.saalfeldlab.n5.DataType;
+import org.janelia.saalfeldlab.n5.DatasetAttributes;
+import org.janelia.saalfeldlab.n5.N5Writer;
+import org.janelia.saalfeldlab.n5.RawCompression;
 
 import ch.systemsx.cisd.base.mdarray.MDByteArray;
 import ch.systemsx.cisd.base.mdarray.MDDoubleArray;
@@ -289,7 +294,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	}
 
 	@Override
-	public boolean deleteBlock(String pathName, final long[] gridPosition) throws IOException {
+	public boolean deleteBlock(String pathName, final long... gridPosition) throws IOException {
 
 		// deletion is not supported in HDF5, so the block is overwritten with zeroes instead
 
