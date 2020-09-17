@@ -16,5 +16,6 @@ Not everything is possible because of the philosophical differences between N5 a
 * overlapping chunks
 * custom compression
 * varlength chunks
+* chunks of serialized objects
 * multisets or other custom types
 * parallel writing (it's HDF5)
