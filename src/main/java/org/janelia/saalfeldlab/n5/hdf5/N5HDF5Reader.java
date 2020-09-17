@@ -28,6 +28,7 @@ package org.janelia.saalfeldlab.n5.hdf5;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -328,6 +329,117 @@ public class N5HDF5Reader implements N5Reader, Closeable {
 		return null;
 	}
 
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T> T getAttribute(String pathName, final String key, final Type type) throws IOException {
+
+		if (pathName.equals(""))
+			pathName = "/";
+
+		if (!reader.exists(pathName))
+			return null;
+
+		if (key.equals("dimensions") && type.getTypeName().equals(long[].class.getTypeName())) {
+			final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
+			final long[] dimensions = datasetInfo.getDimensions();
+			reorder(dimensions);
+			return (T)dimensions;
+		}
+
+		if (key.equals("blockSize") && type.getTypeName().equals(int[].class.getTypeName())) {
+			final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
+			final long[] dimensions = datasetInfo.getDimensions();
+			int[] blockSize = overrideBlockSize ? null : datasetInfo.tryGetChunkSizes();
+			if (blockSize != null)
+				reorder(blockSize);
+			else {
+				blockSize = new int[dimensions.length];
+				for (int i = 0; i < blockSize.length; ++i) {
+					if (i >= defaultBlockSize.length || defaultBlockSize[i] <= 0)
+						blockSize[i] = (int)dimensions[i];
+					else
+						blockSize[i] = defaultBlockSize[i];
+				}
+			}
+			return (T)blockSize;
+		}
+
+		if (key.equals("dataType") && type.getTypeName().equals(DataType.class.getTypeName())) {
+
+			final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
+			return (T)getDataType(datasetInfo);
+		}
+
+		if (key.equals("compression") && type.getTypeName().equals(Compression.class.getTypeName()))
+			return (T)new RawCompression();
+
+		if (!reader.object().hasAttribute(pathName, key))
+			return null;
+
+		final HDF5DataTypeInformation attributeInfo = reader.object().getAttributeInformation(pathName, key);
+		final Class<?> clazz = attributeInfo.tryGetJavaType();
+		if (clazz.isAssignableFrom(long[].class))
+			if (attributeInfo.isSigned())
+				return (T)reader.int64().getArrayAttr(pathName, key);
+			else
+				return (T)reader.uint64().getArrayAttr(pathName, key);
+		if (clazz.isAssignableFrom(int[].class))
+			if (attributeInfo.isSigned())
+				return (T)reader.int32().getArrayAttr(pathName, key);
+			else
+				return (T)reader.uint32().getArrayAttr(pathName, key);
+		if (clazz.isAssignableFrom(short[].class))
+			if (attributeInfo.isSigned())
+				return (T)reader.int16().getArrayAttr(pathName, key);
+			else
+				return (T)reader.uint16().getArrayAttr(pathName, key);
+		if (clazz.isAssignableFrom(byte[].class)) {
+			if (attributeInfo.isSigned())
+				return (T)reader.int8().getArrayAttr(pathName, key);
+			else
+				return (T)reader.uint8().getArrayAttr(pathName, key);
+		} else if (clazz.isAssignableFrom(double[].class))
+			return (T)reader.float64().getArrayAttr(pathName, key);
+		else if (clazz.isAssignableFrom(float[].class))
+			return (T)reader.float32().getArrayAttr(pathName, key);
+		else if (clazz.isAssignableFrom(String[].class))
+			return (T)reader.string().getArrayAttr(pathName, key);
+		if (clazz.isAssignableFrom(long.class)) {
+			if (attributeInfo.isSigned())
+				return (T)new Long(reader.int64().getAttr(pathName, key));
+			else
+				return (T)new Long(reader.uint64().getAttr(pathName, key));
+		} else if (clazz.isAssignableFrom(int.class)) {
+			if (attributeInfo.isSigned())
+				return (T)new Integer(reader.int32().getAttr(pathName, key));
+			else
+				return (T)new Integer(reader.uint32().getAttr(pathName, key));
+		} else if (clazz.isAssignableFrom(short.class)) {
+			if (attributeInfo.isSigned())
+				return (T)new Short(reader.int16().getAttr(pathName, key));
+			else
+				return (T)new Short(reader.uint16().getAttr(pathName, key));
+		} else if (clazz.isAssignableFrom(byte.class)) {
+			if (attributeInfo.isSigned())
+				return (T)new Byte(reader.int8().getAttr(pathName, key));
+			else
+				return (T)new Byte(reader.uint8().getAttr(pathName, key));
+		} else if (clazz.isAssignableFrom(double.class))
+			return (T)new Double(reader.float64().getAttr(pathName, key));
+		else if (clazz.isAssignableFrom(float.class))
+			return (T)new Float(reader.float32().getAttr(pathName, key));
+		else if (clazz.isAssignableFrom(String.class)) {
+			final String attributeString = reader.string().getAttr(pathName, key);
+			if (type.getTypeName().equals(String.class.getTypeName()))
+				return (T)attributeString;
+			else
+				return gson.fromJson(attributeString, type);
+		}
+
+		System.err.println("Reading attributes of type " + attributeInfo + " not yet implemented.");
+		return null;
+	}
+
 	protected static DataType getDataType(final HDF5DataSetInformation datasetInfo) {
 
 		final HDF5DataTypeInformation typeInfo = datasetInfo.getTypeInformation();
@@ -448,7 +560,7 @@ public class N5HDF5Reader implements N5Reader, Closeable {
 	public DataBlock<?> readBlock(
 			String pathName,
 			final DatasetAttributes datasetAttributes,
-			final long[] gridPosition) throws IOException {
+			final long... gridPosition) throws IOException {
 
 		if (pathName.equals(""))
 			pathName = "/";

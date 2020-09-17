@@ -25,12 +25,28 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
-import org.janelia.saalfeldlab.n5.*;
+import org.janelia.saalfeldlab.n5.AbstractN5Test;
+import org.janelia.saalfeldlab.n5.ByteArrayDataBlock;
+import org.janelia.saalfeldlab.n5.Compression;
+import org.janelia.saalfeldlab.n5.DataBlock;
+import org.janelia.saalfeldlab.n5.DataType;
+import org.janelia.saalfeldlab.n5.DatasetAttributes;
+import org.janelia.saalfeldlab.n5.DoubleArrayDataBlock;
+import org.janelia.saalfeldlab.n5.FloatArrayDataBlock;
+import org.janelia.saalfeldlab.n5.GzipCompression;
+import org.janelia.saalfeldlab.n5.IntArrayDataBlock;
+import org.janelia.saalfeldlab.n5.LongArrayDataBlock;
+import org.janelia.saalfeldlab.n5.N5Reader;
 import org.janelia.saalfeldlab.n5.N5Reader.Version;
+import org.janelia.saalfeldlab.n5.N5Writer;
+import org.janelia.saalfeldlab.n5.RawCompression;
+import org.janelia.saalfeldlab.n5.ShortArrayDataBlock;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import com.google.gson.reflect.TypeToken;
 
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
@@ -55,11 +71,11 @@ public class N5HDF5Test extends AbstractN5Test {
 		public double[] data = new double[0];
 
 		@Override
-		public boolean equals(Object other) {
+		public boolean equals(final Object other) {
 
 			if (other instanceof Structured) {
 
-				Structured otherStructured = (Structured)other;
+				final Structured otherStructured = (Structured)other;
 				return
 						name.equals(otherStructured.name) &&
 						id == otherStructured.id &&
@@ -112,6 +128,12 @@ public class N5HDF5Test extends AbstractN5Test {
 	}
 
 	@Override
+	@Test
+	@Ignore("HDF5 does not currently support mode 2 data blocks and serialized objects.")
+	public void testWriteReadSerializableBlock() {
+	}
+
+	@Override
 	protected boolean testDeleteIsBlockDeleted(final DataBlock<?> dataBlock) {
 
 		// deletion is not supported in HDF5, so the block is overwritten with zeroes instead
@@ -160,7 +182,7 @@ public class N5HDF5Test extends AbstractN5Test {
 		hdf5Writer = null;
 		n5 = null;
 
-		IHDF5Reader hdf5Reader = HDF5Factory.openForReading(testDirPath);
+		final IHDF5Reader hdf5Reader = HDF5Factory.openForReading(testDirPath);
 		final N5HDF5Reader n5Reader = new N5HDF5Reader(hdf5Reader, defaultBlockSize);
 		final DatasetAttributes originalAttributes = n5Reader.getDatasetAttributes(datasetName);
 		Assert.assertArrayEquals(blockSize, originalAttributes.getBlockSize());
@@ -221,16 +243,27 @@ public class N5HDF5Test extends AbstractN5Test {
 	@Test
 	public void testStructuredAttributes() throws IOException {
 
-		Structured attribute = new Structured();
+		final Structured attribute = new Structured();
 		attribute.name = "myName";
 		attribute.id = 20;
 		attribute.data = new double[] {1, 2, 3, 4};
 
 		n5.createGroup("/structuredAttributes");
 		n5.setAttribute("/structuredAttributes", "myAttribute", attribute);
+
+		/* class interface */
 		Structured readAttribute = n5.getAttribute("/structuredAttributes", "myAttribute", Structured.class);
 		assertEquals(attribute, readAttribute);
 
+		/* type interface */
+		readAttribute = n5.getAttribute("/structuredAttributes", "myAttribute", new TypeToken<Structured>(){}.getType());
+		assertEquals(attribute, readAttribute);
+
 		n5.remove("/structuredAttributes");
+	}
+
+	@Test
+	public void testType() {
+		System.out.println(new TypeToken<DataType>() {}.getType().getTypeName());
 	}
 }
