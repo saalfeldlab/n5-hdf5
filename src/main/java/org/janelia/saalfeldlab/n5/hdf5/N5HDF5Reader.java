@@ -168,6 +168,29 @@ public class N5HDF5Reader implements N5Reader, Closeable {
 	 *            true if you want this {@link N5HDF5Reader} to use the
 	 *            defaultBlockSize instead of the chunk-size for reading
 	 *            datasets
+	 * @param gsonBuilder
+	 *            custom {@link GsonBuilder} to support custom attributes
+	 * @param defaultBlockSize
+	 *            for all dimensions > defaultBlockSize.length, and for all
+	 *            dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *            dataset will be used
+	 * @throws IOException
+	 */
+	public N5HDF5Reader(final String hdf5Path, final boolean overrideBlockSize, final GsonBuilder gsonBuilder, final int... defaultBlockSize) throws IOException {
+
+		this(HDF5Factory.openForReading(hdf5Path), overrideBlockSize, gsonBuilder, defaultBlockSize);
+	}
+
+
+	/**
+	 * Opens an {@link N5HDF5Reader} for a given HDF5 file.
+	 *
+	 * @param hdf5Path
+	 *            HDF5 file name
+	 * @param overrideBlockSize
+	 *            true if you want this {@link N5HDF5Reader} to use the
+	 *            defaultBlockSize instead of the chunk-size for reading
+	 *            datasets
 	 * @param defaultBlockSize
 	 *            for all dimensions > defaultBlockSize.length, and for all
 	 *            dimensions with defaultBlockSize[i] <= 0, the size of the

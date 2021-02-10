@@ -38,6 +38,8 @@ import org.janelia.saalfeldlab.n5.DatasetAttributes;
 import org.janelia.saalfeldlab.n5.N5Writer;
 import org.janelia.saalfeldlab.n5.RawCompression;
 
+import com.google.gson.GsonBuilder;
+
 import ch.systemsx.cisd.base.mdarray.MDByteArray;
 import ch.systemsx.cisd.base.mdarray.MDDoubleArray;
 import ch.systemsx.cisd.base.mdarray.MDFloatArray;
@@ -63,6 +65,50 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	 *
 	 * @param writer
 	 *            HDF5 writer
+	 * @param overrideBlockSize
+	 *            true if you want this {@link N5HDF5Writer} to use the
+	 *            defaultBlockSize instead of the chunk-size for reading
+	 *            datasets
+	 * @param gsonBuilder
+	 *            custom {@link GsonBuilder} to support custom attributes
+	 * @param defaultBlockSize
+	 *            for all dimensions > defaultBlockSize.length, and for all
+	 *            dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *            dataset will be used
+	 * @throws IOException
+	 */
+	public N5HDF5Writer(final IHDF5Writer writer, final boolean overrideBlockSize, final GsonBuilder gsonBuilder, final int... defaultBlockSize) throws IOException {
+
+		super(writer, overrideBlockSize, gsonBuilder, defaultBlockSize);
+		this.writer = writer;
+		setAttribute("/", VERSION_KEY, N5HDF5Reader.VERSION.toString());
+	}
+
+	/**
+	 * Opens an {@link N5HDF5Writer} for a given HDF5 file.
+	 *
+	 * @param writer
+	 *            HDF5 writer
+	 * @param overrideBlockSize
+	 *            true if you want this {@link N5HDF5Writer} to use the
+	 *            defaultBlockSize instead of the chunk-size for reading
+	 *            datasets
+	 * @param defaultBlockSize
+	 *            for all dimensions > defaultBlockSize.length, and for all
+	 *            dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *            dataset will be used
+	 * @throws IOException
+	 */
+	public N5HDF5Writer(final IHDF5Writer writer, final boolean overrideBlockSize, final int... defaultBlockSize) throws IOException {
+
+		this(writer, overrideBlockSize, new GsonBuilder(), defaultBlockSize);
+	}
+
+	/**
+	 * Opens an {@link N5HDF5Writer} for a given HDF5 file.
+	 *
+	 * @param writer
+	 *            HDF5 writer
 	 * @param defaultBlockSize
 	 *            for all dimensions > defaultBlockSize.length, and for all
 	 *            dimensions with defaultBlockSize[i] <= 0, the size of the
@@ -71,9 +117,49 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	 */
 	public N5HDF5Writer(final IHDF5Writer writer, final int... defaultBlockSize) throws IOException {
 
-		super(writer, defaultBlockSize);
-		this.writer = writer;
-		setAttribute("/", VERSION_KEY, N5HDF5Reader.VERSION.toString());
+		this(writer, false, defaultBlockSize);
+	}
+
+	/**
+	 * Opens an {@link N5HDF5Writer} for a given HDF5 file.
+	 *
+	 * @param hdf5Path
+	 *            HDF5 writer
+	 * @param overrideBlockSize
+	 *            true if you want this {@link N5HDF5Writer} to use the
+	 *            defaultBlockSize instead of the chunk-size for reading
+	 *            datasets
+	 * @param gsonBuilder
+	 *            custom {@link GsonBuilder} to support custom attributes
+	 * @param defaultBlockSize
+	 *            for all dimensions > defaultBlockSize.length, and for all
+	 *            dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *            dataset will be used
+	 * @throws IOException
+	 */
+	public N5HDF5Writer(final String hdf5Path, final boolean overrideBlockSize, final GsonBuilder gsonBuilder, final int... defaultBlockSize) throws IOException {
+
+		this(HDF5Factory.open(hdf5Path), overrideBlockSize, gsonBuilder, defaultBlockSize);
+	}
+
+	/**
+	 * Opens an {@link N5HDF5Writer} for a given HDF5 file.
+	 *
+	 * @param hdf5Path
+	 *            HDF5 file name
+	 * @param overrideBlockSize
+	 *            true if you want this {@link N5HDF5Writer} to use the
+	 *            defaultBlockSize instead of the chunk-size for reading
+	 *            datasets
+	 * @param defaultBlockSize
+	 *            for all dimensions > defaultBlockSize.length, and for all
+	 *            dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *            dataset will be used
+	 * @throws IOException
+	 */
+	public N5HDF5Writer(final String hdf5Path, final boolean overrideBlockSize, final int... defaultBlockSize) throws IOException {
+
+		this(hdf5Path, overrideBlockSize, new GsonBuilder(), defaultBlockSize);
 	}
 
 	/**
@@ -89,7 +175,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	 */
 	public N5HDF5Writer(final String hdf5Path, final int... defaultBlockSize) throws IOException {
 
-		this(HDF5Factory.open(hdf5Path), defaultBlockSize);
+		this(hdf5Path, false, defaultBlockSize);
 	}
 
 	@Override
@@ -290,6 +376,8 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 			final MDDoubleArray float64TargetCell = new MDDoubleArray((double[])dataBlock.getData(), hdf5DataBlockSize);
 			writer.float64().writeMDArrayBlockWithOffset(pathName, float64TargetCell, hdf5Offset);
 			break;
+		default:
+			throw new UnsupportedOperationException(datasetAttributes.getDataType() + " datatype not currently supported.");
 		}
 	}
 

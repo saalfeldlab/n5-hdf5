@@ -191,7 +191,8 @@ public class N5HDF5Test extends AbstractN5Test {
 		final DatasetAttributes overriddenAttributes = n5ReaderOverride.getDatasetAttributes(datasetName);
 		Assert.assertArrayEquals(defaultBlockSize, overriddenAttributes.getBlockSize());
 
-		hdf5Reader.close();
+		n5Reader.close();
+		n5ReaderOverride.close();
 	}
 
 	@Test
