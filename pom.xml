@@ -86,13 +86,6 @@
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>deploy-to-scijava</releaseProfiles>
 
-		<!-- TODO remove when pom-scijava-base is updated -->
-		<scijava.jvm.version>8</scijava.jvm.version>
-		<scijava.jvm.build.version>[1.8.0-101,)</scijava.jvm.build.version>
-
-		<maven-enforcer-plugin.version>3.0.0-M3</maven-enforcer-plugin.version>
-		<jacoco-maven-plugin.version>0.8.6</jacoco-maven-plugin.version>
-
 		<n5.version>2.4.0</n5.version>
 	</properties>
 
