@@ -65,9 +65,9 @@ import ch.systemsx.cisd.hdf5.IHDF5Reader;
 /**
  * Best effort {@link N5Reader} implementation for HDF5 files.
  *
- * Attributes are not generally read as JSON but use HDF5 types.  That means
+ * Attributes are not generally read as JSON but use HDF5 types. That means
  * that HDF5 files that were not generated with this library can be used
- * properly and correctly.  Structured attributes for which no appropriate
+ * properly and correctly. Structured attributes for which no appropriate
  * HDF5 attribute type exists are parsed as JSON strings.
  *
  * @author Stephan Saalfeld
@@ -80,7 +80,12 @@ public class N5HDF5Reader implements N5Reader, Closeable {
 	/**
 	 * SemVer version of this N5-HDF5 spec.
 	 */
-	public static final Version VERSION = new Version(VersionUtils.getVersionFromPOM(N5HDF5Reader.class, "org.janelia.saalfeldlab", "n5-hdf5"));
+	public static final Version VERSION =
+			new Version(
+					VersionUtils.getVersionFromPOM(
+							N5HDF5Reader.class,
+							"org.janelia.saalfeldlab",
+							"n5-hdf5"));
 
 	protected final IHDF5Reader reader;
 
@@ -100,12 +105,16 @@ public class N5HDF5Reader implements N5Reader, Closeable {
 	 * @param gsonBuilder
 	 *            custom {@link GsonBuilder} to support custom attributes
 	 * @param defaultBlockSize
-	 *            for all dimensions > defaultBlockSize.length, and for all
-	 *            dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *            for all dimensions &gt; defaultBlockSize.length, and for all
+	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
 	 */
-	public N5HDF5Reader(final IHDF5Reader reader, final boolean overrideBlockSize, final GsonBuilder gsonBuilder, final int... defaultBlockSize) throws IOException {
+	public N5HDF5Reader(
+			final IHDF5Reader reader,
+			final boolean overrideBlockSize,
+			final GsonBuilder gsonBuilder,
+			final int... defaultBlockSize) throws IOException {
 
 		gsonBuilder.disableHtmlEscaping();
 		this.gson = gsonBuilder.create();
@@ -133,12 +142,15 @@ public class N5HDF5Reader implements N5Reader, Closeable {
 	 *            defaultBlockSize instead of the chunk-size for reading
 	 *            datasets
 	 * @param defaultBlockSize
-	 *            for all dimensions > defaultBlockSize.length, and for all
-	 *            dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *            for all dimensions &gt; defaultBlockSize.length, and for all
+	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
 	 */
-	public N5HDF5Reader(final IHDF5Reader reader, final boolean overrideBlockSize, final int... defaultBlockSize) throws IOException {
+	public N5HDF5Reader(
+			final IHDF5Reader reader,
+			final boolean overrideBlockSize,
+			final int... defaultBlockSize) throws IOException {
 
 		this(reader, overrideBlockSize, new GsonBuilder(), defaultBlockSize);
 	}
@@ -149,12 +161,14 @@ public class N5HDF5Reader implements N5Reader, Closeable {
 	 * @param reader
 	 *            HDF5 reader
 	 * @param defaultBlockSize
-	 *            for all dimensions > defaultBlockSize.length, and for all
-	 *            dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *            for all dimensions &gt; defaultBlockSize.length, and for all
+	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
 	 */
-	public N5HDF5Reader(final IHDF5Reader reader, final int... defaultBlockSize) throws IOException {
+	public N5HDF5Reader(
+			final IHDF5Reader reader,
+			final int... defaultBlockSize) throws IOException {
 
 		this(reader, false, defaultBlockSize);
 	}
@@ -171,16 +185,19 @@ public class N5HDF5Reader implements N5Reader, Closeable {
 	 * @param gsonBuilder
 	 *            custom {@link GsonBuilder} to support custom attributes
 	 * @param defaultBlockSize
-	 *            for all dimensions > defaultBlockSize.length, and for all
-	 *            dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *            for all dimensions &gt; defaultBlockSize.length, and for all
+	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
 	 */
-	public N5HDF5Reader(final String hdf5Path, final boolean overrideBlockSize, final GsonBuilder gsonBuilder, final int... defaultBlockSize) throws IOException {
+	public N5HDF5Reader(
+			final String hdf5Path,
+			final boolean overrideBlockSize,
+			final GsonBuilder gsonBuilder,
+			final int... defaultBlockSize) throws IOException {
 
 		this(HDF5Factory.openForReading(hdf5Path), overrideBlockSize, gsonBuilder, defaultBlockSize);
 	}
-
 
 	/**
 	 * Opens an {@link N5HDF5Reader} for a given HDF5 file.
@@ -192,12 +209,15 @@ public class N5HDF5Reader implements N5Reader, Closeable {
 	 *            defaultBlockSize instead of the chunk-size for reading
 	 *            datasets
 	 * @param defaultBlockSize
-	 *            for all dimensions > defaultBlockSize.length, and for all
-	 *            dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *            for all dimensions &gt; defaultBlockSize.length, and for all
+	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
 	 */
-	public N5HDF5Reader(final String hdf5Path, final boolean overrideBlockSize, final int... defaultBlockSize) throws IOException {
+	public N5HDF5Reader(
+			final String hdf5Path,
+			final boolean overrideBlockSize,
+			final int... defaultBlockSize) throws IOException {
 
 		this(HDF5Factory.openForReading(hdf5Path), overrideBlockSize, defaultBlockSize);
 	}
@@ -208,12 +228,14 @@ public class N5HDF5Reader implements N5Reader, Closeable {
 	 * @param hdf5Path
 	 *            HDF5 file name
 	 * @param defaultBlockSize
-	 *            for all dimensions > defaultBlockSize.length, and for all
-	 *            dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *            for all dimensions &gt; defaultBlockSize.length, and for all
+	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
 	 */
-	public N5HDF5Reader(final String hdf5Path, final int... defaultBlockSize) throws IOException {
+	public N5HDF5Reader(
+			final String hdf5Path,
+			final int... defaultBlockSize) throws IOException {
 
 		this(HDF5Factory.openForReading(hdf5Path), defaultBlockSize);
 	}
@@ -546,7 +568,7 @@ public class N5HDF5Reader implements N5Reader, Closeable {
 	}
 
 	/**
-	 * Always returns {@link CompressionType#RAW} because I could not yet find a
+	 * Always returns {@link CompressionType}#RAW because I could not yet find a
 	 * meaningful way to get information about the compression of a dataset.
 	 */
 	@Override
@@ -609,43 +631,63 @@ public class N5HDF5Reader implements N5Reader, Closeable {
 		final DataBlock<?> dataBlock;
 		switch (datasetAttributes.getDataType()) {
 		case UINT8:
-			final MDByteArray uint8Array = reader.uint8().readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
+			final MDByteArray uint8Array = reader
+					.uint8()
+					.readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
 			dataBlock = new ByteArrayDataBlock(croppedBlockSize, gridPosition, uint8Array.getAsFlatArray());
 			break;
 		case INT8:
-			final MDByteArray int8Array = reader.int8().readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
+			final MDByteArray int8Array = reader
+					.int8()
+					.readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
 			dataBlock = new ByteArrayDataBlock(croppedBlockSize, gridPosition, int8Array.getAsFlatArray());
 			break;
 		case UINT16:
-			final MDShortArray uint16Array = reader.uint16().readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
+			final MDShortArray uint16Array = reader
+					.uint16()
+					.readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
 			dataBlock = new ShortArrayDataBlock(croppedBlockSize, gridPosition, uint16Array.getAsFlatArray());
 			break;
 		case INT16:
-			final MDShortArray int16Array = reader.int16().readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
+			final MDShortArray int16Array = reader
+					.int16()
+					.readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
 			dataBlock = new ShortArrayDataBlock(croppedBlockSize, gridPosition, int16Array.getAsFlatArray());
 			break;
 		case UINT32:
-			final MDIntArray uint32Array = reader.uint32().readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
+			final MDIntArray uint32Array = reader
+					.uint32()
+					.readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
 			dataBlock = new IntArrayDataBlock(croppedBlockSize, gridPosition, uint32Array.getAsFlatArray());
 			break;
 		case INT32:
-			final MDIntArray int32Array = reader.int32().readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
+			final MDIntArray int32Array = reader
+					.int32()
+					.readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
 			dataBlock = new IntArrayDataBlock(croppedBlockSize, gridPosition, int32Array.getAsFlatArray());
 			break;
 		case UINT64:
-			final MDLongArray uint64Array = reader.uint64().readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
+			final MDLongArray uint64Array = reader
+					.uint64()
+					.readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
 			dataBlock = new LongArrayDataBlock(croppedBlockSize, gridPosition, uint64Array.getAsFlatArray());
 			break;
 		case INT64:
-			final MDLongArray int64Array = reader.int64().readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
+			final MDLongArray int64Array = reader
+					.int64()
+					.readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
 			dataBlock = new LongArrayDataBlock(croppedBlockSize, gridPosition, int64Array.getAsFlatArray());
 			break;
 		case FLOAT32:
-			final MDFloatArray float32Array = reader.float32().readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
+			final MDFloatArray float32Array = reader
+					.float32()
+					.readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
 			dataBlock = new FloatArrayDataBlock(croppedBlockSize, gridPosition, float32Array.getAsFlatArray());
 			break;
 		case FLOAT64:
-			final MDDoubleArray float64Array = reader.float64().readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
+			final MDDoubleArray float64Array = reader
+					.float64()
+					.readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
 			dataBlock = new DoubleArrayDataBlock(croppedBlockSize, gridPosition, float64Array.getAsFlatArray());
 			break;
 		default:
@@ -665,7 +707,8 @@ public class N5HDF5Reader implements N5Reader, Closeable {
 	}
 
 	/**
-	 * Structured attributes that are stored as JSON will be classified as String.class.
+	 * Structured attributes that are stored as JSON will be classified as
+	 * String.class.
 	 */
 	@Override
 	public Map<String, Class<?>> listAttributes(final String pathName) throws IOException {
@@ -673,8 +716,17 @@ public class N5HDF5Reader implements N5Reader, Closeable {
 		final String finalPathName = pathName.equals("") ? "/" : pathName;
 
 		final HashMap<String, Class<?>> attributes = new HashMap<>();
-		reader.object().getAttributeNames(finalPathName).forEach(
-				attributeName -> attributes.put(attributeName, reader.object().getAttributeInformation(finalPathName, attributeName).tryGetJavaType()));
+		reader
+				.object()
+				.getAttributeNames(finalPathName)
+				.forEach(
+						attributeName -> attributes
+								.put(
+										attributeName,
+										reader
+												.object()
+												.getAttributeInformation(finalPathName, attributeName)
+												.tryGetJavaType()));
 		return attributes;
 	}
 
@@ -689,6 +741,7 @@ public class N5HDF5Reader implements N5Reader, Closeable {
 	 * @return file name of HDF5 file this reader is associated with
 	 */
 	public File getFilename() {
+
 		return this.reader.file().getFile();
 	}
 
@@ -697,19 +750,23 @@ public class N5HDF5Reader implements N5Reader, Closeable {
 	 * @return a copy of the default block size of this reader
 	 */
 	public int[] getDefaultBlockSizeCopy() {
+
 		return defaultBlockSize.clone();
 	}
 
 	/**
 	 *
-	 * @return {@code true} if this reader overrides block size found in an HDF5 dataset, {@code false} otherwise
+	 * @return {@code true} if this reader overrides block size found in an
+	 *         HDF5 dataset, {@code false} otherwise
 	 */
 	public boolean doesOverrideBlockSize() {
+
 		return this.overrideBlockSize;
 	}
 
 	@Override
 	public String toString() {
+
 		return String.format("%s[file=%s]", getClass().getSimpleName(), reader.file().getFile());
 	}
 }

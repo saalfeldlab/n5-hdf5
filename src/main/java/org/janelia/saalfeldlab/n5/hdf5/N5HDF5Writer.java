@@ -72,12 +72,16 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	 * @param gsonBuilder
 	 *            custom {@link GsonBuilder} to support custom attributes
 	 * @param defaultBlockSize
-	 *            for all dimensions > defaultBlockSize.length, and for all
-	 *            dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *            for all dimensions &gt; defaultBlockSize.length, and for all
+	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
 	 */
-	public N5HDF5Writer(final IHDF5Writer writer, final boolean overrideBlockSize, final GsonBuilder gsonBuilder, final int... defaultBlockSize) throws IOException {
+	public N5HDF5Writer(
+			final IHDF5Writer writer,
+			final boolean overrideBlockSize,
+			final GsonBuilder gsonBuilder,
+			final int... defaultBlockSize) throws IOException {
 
 		super(writer, overrideBlockSize, gsonBuilder, defaultBlockSize);
 		this.writer = writer;
@@ -94,12 +98,15 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	 *            defaultBlockSize instead of the chunk-size for reading
 	 *            datasets
 	 * @param defaultBlockSize
-	 *            for all dimensions > defaultBlockSize.length, and for all
-	 *            dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *            for all dimensions &gt; defaultBlockSize.length, and for all
+	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
 	 */
-	public N5HDF5Writer(final IHDF5Writer writer, final boolean overrideBlockSize, final int... defaultBlockSize) throws IOException {
+	public N5HDF5Writer(
+			final IHDF5Writer writer,
+			final boolean overrideBlockSize,
+			final int... defaultBlockSize) throws IOException {
 
 		this(writer, overrideBlockSize, new GsonBuilder(), defaultBlockSize);
 	}
@@ -110,12 +117,14 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	 * @param writer
 	 *            HDF5 writer
 	 * @param defaultBlockSize
-	 *            for all dimensions > defaultBlockSize.length, and for all
-	 *            dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *            for all dimensions &gt; defaultBlockSize.length, and for all
+	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
 	 */
-	public N5HDF5Writer(final IHDF5Writer writer, final int... defaultBlockSize) throws IOException {
+	public N5HDF5Writer(
+			final IHDF5Writer writer,
+			final int... defaultBlockSize) throws IOException {
 
 		this(writer, false, defaultBlockSize);
 	}
@@ -132,12 +141,16 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	 * @param gsonBuilder
 	 *            custom {@link GsonBuilder} to support custom attributes
 	 * @param defaultBlockSize
-	 *            for all dimensions > defaultBlockSize.length, and for all
-	 *            dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *            for all dimensions &gt; defaultBlockSize.length, and for all
+	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
 	 */
-	public N5HDF5Writer(final String hdf5Path, final boolean overrideBlockSize, final GsonBuilder gsonBuilder, final int... defaultBlockSize) throws IOException {
+	public N5HDF5Writer(
+			final String hdf5Path,
+			final boolean overrideBlockSize,
+			final GsonBuilder gsonBuilder,
+			final int... defaultBlockSize) throws IOException {
 
 		this(HDF5Factory.open(hdf5Path), overrideBlockSize, gsonBuilder, defaultBlockSize);
 	}
@@ -152,12 +165,15 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	 *            defaultBlockSize instead of the chunk-size for reading
 	 *            datasets
 	 * @param defaultBlockSize
-	 *            for all dimensions > defaultBlockSize.length, and for all
-	 *            dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *            for all dimensions &gt; defaultBlockSize.length, and for all
+	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
 	 */
-	public N5HDF5Writer(final String hdf5Path, final boolean overrideBlockSize, final int... defaultBlockSize) throws IOException {
+	public N5HDF5Writer(
+			final String hdf5Path,
+			final boolean overrideBlockSize,
+			final int... defaultBlockSize) throws IOException {
 
 		this(hdf5Path, overrideBlockSize, new GsonBuilder(), defaultBlockSize);
 	}
@@ -168,12 +184,14 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	 * @param hdf5Path
 	 *            HDF5 file name
 	 * @param defaultBlockSize
-	 *            for all dimensions > defaultBlockSize.length, and for all
-	 *            dimensions with defaultBlockSize[i] <= 0, the size of the
+	 *            for all dimensions &gt; defaultBlockSize.length, and for all
+	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
 	 */
-	public N5HDF5Writer(final String hdf5Path, final int... defaultBlockSize) throws IOException {
+	public N5HDF5Writer(
+			final String hdf5Path,
+			final int... defaultBlockSize) throws IOException {
 
 		this(hdf5Path, false, defaultBlockSize);
 	}
