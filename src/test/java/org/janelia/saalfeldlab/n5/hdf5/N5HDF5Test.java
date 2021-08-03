@@ -276,29 +276,33 @@ public class N5HDF5Test extends AbstractN5Test {
 		attribute.data = new double[] {1, 2, 3, 4};
 
 		final String string = "a string";
+		final String emptyString = "";
 		final double[] darray = new double[] {0.1,0.2,0.3,0.4,0.5};
 		final int[] iarray = new int[] {1,2,3,4,5};
 
 		final JsonElement oElem = h5.getGson().toJsonTree( attribute );
 		final JsonElement sElem = h5.getGson().toJsonTree( string );
+		final JsonElement esElem = h5.getGson().toJsonTree( emptyString );
 		final JsonElement dElem = h5.getGson().toJsonTree( darray );
 		final JsonElement iElem = h5.getGson().toJsonTree( iarray );
 
 		n5.createGroup("/attributeTest");
 		n5.setAttribute("/attributeTest", "myAttribute", attribute);
 		n5.setAttribute("/attributeTest", "string", string );
+		n5.setAttribute("/attributeTest", "emptyString", emptyString );
 		n5.setAttribute("/attributeTest", "darray", darray );
 		n5.setAttribute("/attributeTest", "iarray", iarray );
 
 		HashMap<String, JsonElement> attrs = h5.getAttributes( "/attributeTest" );
-
-		assertTrue( "has struct attribute", attrs.containsKey("myAttribute") );
+		assertTrue( "has object attribute", attrs.containsKey("myAttribute") );
 		assertTrue( "has string attribute", attrs.containsKey("string") );
+		assertTrue( "has empty string attribute", attrs.containsKey("emptyString") );
 		assertTrue( "has d-array attribute", attrs.containsKey("darray") );
 		assertTrue( "has i-array attribute", attrs.containsKey("iarray") );
 
 		assertEquals("object elem", oElem, attrs.get("myAttribute"));
 		assertEquals("string elem", sElem, attrs.get("string"));
+		assertEquals("empty string elem", esElem, attrs.get("emptyString"));
 		assertEquals("double array elem", dElem, attrs.get("darray"));
 		assertEquals("int array elem", iElem, attrs.get("iarray"));
 

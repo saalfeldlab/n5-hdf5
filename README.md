@@ -19,3 +19,34 @@ Not everything is possible because of the philosophical differences between N5 a
 * chunks of serialized objects
 * multisets or other custom types
 * parallel writing (it's HDF5)
+* conversion of arbitrary strings from `JsonElement` after getAttributes (see below)
+
+## Notes on `getAttributes`
+
+As of version 1.4.0, `N5HDF5Reader` implements `GsonAttributesParser` and has the method `getAttributes(String)`
+returning a `HashMap<String, JsonElement>`. This method converts String attributes to `JsonObject`s when they
+are valid json, so that arbitrary objects can be parsed.
+
+As a result, it strings that are themselves valid json may not be recoverable from the `JsonElement` in the
+output HashMap.
+
+Future work may instead store objects using a compound type rather than as json strings
+to avoid this issue.
+
+#### Example
+
+As a trivial failure case, we see that storing the string `{     }` (curly brackets with some spaces between
+them) produces a `JsonElement` which has lost number of spaces stored in the string.
+
+```
+final N5HDF5Writer h5 = new N5HDF5Writer("/home/john/tmp/tmp.h5", 2);
+h5.createGroup("attributes");
+h5.setAttribute("attributes", "someJsonString", "{     }");
+System.out.println( h5.getAttribute("attributes", "someJsonString", String.class ));
+System.out.println( h5.getAttributes("attributes").get("someJsonString").toString());
+```
+produces the output:
+```
+{     }
+{}
+```

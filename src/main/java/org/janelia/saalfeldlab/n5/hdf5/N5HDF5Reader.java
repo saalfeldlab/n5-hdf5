@@ -495,36 +495,48 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 		return null;
 	}
 
+	/**
+	 * Returns the attribute map for a group or dataset as {@link JsonElement}s.
+	 * <p>
+	 * String attributes are parsed as {@link JsonObject}s when they are valid json
+	 * so that they may be converted to arbitrary objects. This means that strings
+	 * that are valid json may not be recoverable from this method, use {@link #getAttribute()}
+	 * instead.
+	 * <p>
+	 * Potential future work may instead store objects as a compound type rather than as strings.
+	 *
+	 * @param pathName the group or dataset path
+	 * @return the attribute map
+	 */
 	@Override
 	public HashMap<String, JsonElement> getAttributes(String pathName) throws IOException {
 
 		final HashMap<String, JsonElement> attrs = new HashMap<>();
 		Map<String, Class<?>> attrClasses = listAttributes(pathName);
 		for (String k : attrClasses.keySet()) {
-			if( attrClasses.get(k).equals(String.class)) {
+			if (attrClasses.get(k).equals(String.class)) {
 
-				String s = getAttribute(pathName, k, String.class );
-				Optional<JsonObject> elem = stringToJson( s, gson );
-				if( elem.isPresent())
-					attrs.put( k, elem.get());
-				else
-					attrs.put( k, gson.toJsonTree( s ));
-			}
-			else
+				final String s = getAttribute(pathName, k, String.class);
+
+				if (s.isEmpty()) {
+					// check for empty string explicitly because it parsese
+					// as a null JsonObject without throwing an exception
+					attrs.put(k, gson.toJsonTree(s));
+				} else {
+					JsonElement elem;
+					try {
+						elem = gson.fromJson(s, JsonObject.class);
+					} catch (JsonSyntaxException e) {
+						elem = gson.toJsonTree(s);
+					}
+					attrs.put(k, elem);
+				}
+
+			} else
 				attrs.put(k, gson.toJsonTree(getAttribute(pathName, k, attrClasses.get(k))));
 		}
 
 		return attrs;
-	}
-
-	private static Optional<JsonObject> stringToJson(String s, final Gson gson) {
-
-		try {
-			JsonObject elem = gson.fromJson(s, JsonObject.class);
-			return Optional.of(elem);
-		} catch (JsonSyntaxException e) {
-			return Optional.empty();
-		}
 	}
 
 	protected static DataType getDataType(final HDF5DataSetInformation datasetInfo) {
