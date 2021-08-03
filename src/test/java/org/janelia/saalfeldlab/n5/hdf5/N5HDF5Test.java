@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.HashMap;
 
 import org.janelia.saalfeldlab.n5.AbstractN5Test;
 import org.janelia.saalfeldlab.n5.ByteArrayDataBlock;
@@ -46,6 +47,8 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 
 import ch.systemsx.cisd.hdf5.HDF5Factory;
@@ -261,6 +264,45 @@ public class N5HDF5Test extends AbstractN5Test {
 		assertEquals(attribute, readAttribute);
 
 		n5.remove("/structuredAttributes");
+	}
+
+	@Test
+	public void testAttributesAsJson() throws IOException {
+
+		N5HDF5Writer h5 = (N5HDF5Writer) n5;
+		final Structured attribute = new Structured();
+		attribute.name = "myName";
+		attribute.id = 20;
+		attribute.data = new double[] {1, 2, 3, 4};
+
+		final String string = "a string";
+		final double[] darray = new double[] {0.1,0.2,0.3,0.4,0.5};
+		final int[] iarray = new int[] {1,2,3,4,5};
+
+		final JsonElement oElem = h5.getGson().toJsonTree( attribute );
+		final JsonElement sElem = h5.getGson().toJsonTree( string );
+		final JsonElement dElem = h5.getGson().toJsonTree( darray );
+		final JsonElement iElem = h5.getGson().toJsonTree( iarray );
+
+		n5.createGroup("/attributeTest");
+		n5.setAttribute("/attributeTest", "myAttribute", attribute);
+		n5.setAttribute("/attributeTest", "string", string );
+		n5.setAttribute("/attributeTest", "darray", darray );
+		n5.setAttribute("/attributeTest", "iarray", iarray );
+
+		HashMap<String, JsonElement> attrs = h5.getAttributes( "/attributeTest" );
+
+		assertTrue( "has struct attribute", attrs.containsKey("myAttribute") );
+		assertTrue( "has string attribute", attrs.containsKey("string") );
+		assertTrue( "has d-array attribute", attrs.containsKey("darray") );
+		assertTrue( "has i-array attribute", attrs.containsKey("iarray") );
+
+		assertEquals("object elem", oElem, attrs.get("myAttribute"));
+		assertEquals("string elem", sElem, attrs.get("string"));
+		assertEquals("double array elem", dElem, attrs.get("darray"));
+		assertEquals("int array elem", iElem, attrs.get("iarray"));
+
+		n5.remove("/attributeTest");
 	}
 
 	@Test
