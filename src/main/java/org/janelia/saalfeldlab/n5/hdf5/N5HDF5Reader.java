@@ -32,6 +32,7 @@ import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.janelia.saalfeldlab.n5.ByteArrayDataBlock;
 import org.janelia.saalfeldlab.n5.Compression;
@@ -41,6 +42,7 @@ import org.janelia.saalfeldlab.n5.DataType;
 import org.janelia.saalfeldlab.n5.DatasetAttributes;
 import org.janelia.saalfeldlab.n5.DoubleArrayDataBlock;
 import org.janelia.saalfeldlab.n5.FloatArrayDataBlock;
+import org.janelia.saalfeldlab.n5.GsonAttributesParser;
 import org.janelia.saalfeldlab.n5.IntArrayDataBlock;
 import org.janelia.saalfeldlab.n5.LongArrayDataBlock;
 import org.janelia.saalfeldlab.n5.N5Reader;
@@ -50,6 +52,9 @@ import org.scijava.util.VersionUtils;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 
 import ch.systemsx.cisd.base.mdarray.MDByteArray;
 import ch.systemsx.cisd.base.mdarray.MDDoubleArray;
@@ -73,7 +78,7 @@ import ch.systemsx.cisd.hdf5.IHDF5Reader;
  * @author Stephan Saalfeld
  * @author Philipp Hanslovsky
  */
-public class N5HDF5Reader implements N5Reader, Closeable {
+public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 
 	protected final Gson gson;
 
@@ -238,6 +243,11 @@ public class N5HDF5Reader implements N5Reader, Closeable {
 			final int... defaultBlockSize) throws IOException {
 
 		this(HDF5Factory.openForReading(hdf5Path), defaultBlockSize);
+	}
+
+	@Override
+	public Gson getGson() {
+		return gson;
 	}
 
 	@Override
@@ -483,6 +493,50 @@ public class N5HDF5Reader implements N5Reader, Closeable {
 
 		System.err.println("Reading attributes of type " + attributeInfo + " not yet implemented.");
 		return null;
+	}
+
+	/**
+	 * Returns the attribute map for a group or dataset as {@link JsonElement}s.
+	 * <p>
+	 * String attributes are parsed as {@link JsonObject}s when they are valid json
+	 * so that they may be converted to arbitrary objects. This means that strings
+	 * that are valid json may not be recoverable from this method, use {@link #getAttribute()}
+	 * instead.
+	 * <p>
+	 * Potential future work may instead store objects as a compound type rather than as strings.
+	 *
+	 * @param pathName the group or dataset path
+	 * @return the attribute map
+	 */
+	@Override
+	public HashMap<String, JsonElement> getAttributes(String pathName) throws IOException {
+
+		final HashMap<String, JsonElement> attrs = new HashMap<>();
+		Map<String, Class<?>> attrClasses = listAttributes(pathName);
+		for (String k : attrClasses.keySet()) {
+			if (attrClasses.get(k).equals(String.class)) {
+
+				final String s = getAttribute(pathName, k, String.class);
+
+				if (s.isEmpty()) {
+					// check for empty string explicitly because it parsese
+					// as a null JsonObject without throwing an exception
+					attrs.put(k, gson.toJsonTree(s));
+				} else {
+					JsonElement elem;
+					try {
+						elem = gson.fromJson(s, JsonObject.class);
+					} catch (JsonSyntaxException e) {
+						elem = gson.toJsonTree(s);
+					}
+					attrs.put(k, elem);
+				}
+
+			} else
+				attrs.put(k, gson.toJsonTree(getAttribute(pathName, k, attrClasses.get(k))));
+		}
+
+		return attrs;
 	}
 
 	protected static DataType getDataType(final HDF5DataSetInformation datasetInfo) {
@@ -769,4 +823,5 @@ public class N5HDF5Reader implements N5Reader, Closeable {
 
 		return String.format("%s[file=%s]", getClass().getSimpleName(), reader.file().getFile());
 	}
+
 }
