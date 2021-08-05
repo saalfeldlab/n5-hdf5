@@ -1,4 +1,4 @@
-# n5-hdf5 [![Build Status](https://travis-ci.com/saalfeldlab/n5-hdf5.svg?branch=master)](https://travis-ci.com/saalfeldlab/n5-hdf5)
+# n5-hdf5 [![Build Status](https://github.com/saalfeldlab/n5-hdf5/actions/workflows/build-main.yml/badge.svg)](https://github.com/saalfeldlab/n5-hdf5/actions/workflows/build-main.yml)
 Best effort N5 implementation on HDF5 files (despite the irony).
 
 Not everything is possible because of the philosophical differences between N5 and HDF5 (and the libraries being used), but most of the naive bread and butter stuff works as expected.
