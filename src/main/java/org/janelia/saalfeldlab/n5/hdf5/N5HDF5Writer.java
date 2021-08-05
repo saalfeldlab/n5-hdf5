@@ -76,6 +76,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
+     *            the exception
 	 */
 	public N5HDF5Writer(
 			final IHDF5Writer writer,
@@ -102,6 +103,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
+     *            the exception
 	 */
 	public N5HDF5Writer(
 			final IHDF5Writer writer,
@@ -121,6 +123,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
+     *            the exception
 	 */
 	public N5HDF5Writer(
 			final IHDF5Writer writer,
@@ -145,6 +148,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
+     *            the exception
 	 */
 	public N5HDF5Writer(
 			final String hdf5Path,
@@ -169,6 +173,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
+     *            the exception
 	 */
 	public N5HDF5Writer(
 			final String hdf5Path,
@@ -188,6 +193,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
+     *            the exception
 	 */
 	public N5HDF5Writer(
 			final String hdf5Path,

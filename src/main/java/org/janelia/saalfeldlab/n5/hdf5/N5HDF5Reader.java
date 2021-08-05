@@ -114,6 +114,7 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
+     *            the exception
 	 */
 	public N5HDF5Reader(
 			final IHDF5Reader reader,
@@ -151,6 +152,7 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
+     *            the exception
 	 */
 	public N5HDF5Reader(
 			final IHDF5Reader reader,
@@ -170,6 +172,7 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
+     *            the exception
 	 */
 	public N5HDF5Reader(
 			final IHDF5Reader reader,
@@ -194,6 +197,7 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
+     *            the exception
 	 */
 	public N5HDF5Reader(
 			final String hdf5Path,
@@ -218,6 +222,7 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
+     *            the exception
 	 */
 	public N5HDF5Reader(
 			final String hdf5Path,
@@ -237,6 +242,7 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
+     *            the exception
 	 */
 	public N5HDF5Reader(
 			final String hdf5Path,
@@ -500,7 +506,7 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 	 * <p>
 	 * String attributes are parsed as {@link JsonObject}s when they are valid json
 	 * so that they may be converted to arbitrary objects. This means that strings
-	 * that are valid json may not be recoverable from this method, use {@link #getAttribute()}
+	 * that are valid json may not be recoverable from this method, use getAttribute
 	 * instead.
 	 * <p>
 	 * Potential future work may instead store objects as a compound type rather than as strings.
@@ -602,11 +608,11 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 	 * block size. Also calculates the grid raster position assuming that the
 	 * offset is divisible by block size without remainder.
 	 *
-	 * @param gridPosition
-	 * @param dimensions
-	 * @param blockSize
-	 * @param croppedBlockSize
-	 * @param offset
+	 * @param gridPosition the coordinate of the block
+	 * @param dimensions the dataset dimensions
+	 * @param blockSize the block size
+	 * @param croppedBlockSize the cropped block size to be filled
+	 * @param offset the offset to be filled
 	 */
 	protected static void cropBlockSize(
 			final long[] gridPosition,
@@ -624,6 +630,9 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 	/**
 	 * Always returns {@link CompressionType}#RAW because I could not yet find a
 	 * meaningful way to get information about the compression of a dataset.
+     *
+     * @param pathName the group or dataset path
+     * @return the DatasetAttributes
 	 */
 	@Override
 	public DatasetAttributes getDatasetAttributes(String pathName) {
