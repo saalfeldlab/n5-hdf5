@@ -71,8 +71,8 @@
 		<url>https://github.com/saalfedlab/n5-hdf5/issues</url>
 	</issueManagement>
 	<ciManagement>
-		<system>Travis CI</system>
-		<url>https://travis-ci.com/saalfeldlab/n5-hdf5</url>
+		<system>GitHub Actions</system>
+		<url>https://github.com/saalfeldlab/n5-hdf5/actions</url>
 	</ciManagement>
 
 	<properties>
