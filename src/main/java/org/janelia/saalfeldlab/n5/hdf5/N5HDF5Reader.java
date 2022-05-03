@@ -32,7 +32,6 @@ import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import org.janelia.saalfeldlab.n5.ByteArrayDataBlock;
 import org.janelia.saalfeldlab.n5.Compression;
@@ -400,39 +399,42 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 		if (!reader.exists(pathName))
 			return null;
 
-		if (key.equals("dimensions") && type.getTypeName().equals(long[].class.getTypeName())) {
-			final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
-			final long[] dimensions = datasetInfo.getDimensions();
-			reorder(dimensions);
-			return (T)dimensions;
-		}
+		if (datasetExists(pathName)) {
 
-		if (key.equals("blockSize") && type.getTypeName().equals(int[].class.getTypeName())) {
-			final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
-			final long[] dimensions = datasetInfo.getDimensions();
-			int[] blockSize = overrideBlockSize ? null : datasetInfo.tryGetChunkSizes();
-			if (blockSize != null)
-				reorder(blockSize);
-			else {
-				blockSize = new int[dimensions.length];
-				for (int i = 0; i < blockSize.length; ++i) {
-					if (i >= defaultBlockSize.length || defaultBlockSize[i] <= 0)
-						blockSize[i] = (int)dimensions[i];
-					else
-						blockSize[i] = defaultBlockSize[i];
-				}
+			if (key.equals("dimensions") && type.getTypeName().equals(long[].class.getTypeName())) {
+				final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
+				final long[] dimensions = datasetInfo.getDimensions();
+				reorder(dimensions);
+				return (T)dimensions;
 			}
-			return (T)blockSize;
+
+			if (key.equals("blockSize") && type.getTypeName().equals(int[].class.getTypeName())) {
+				final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
+				final long[] dimensions = datasetInfo.getDimensions();
+				int[] blockSize = overrideBlockSize ? null : datasetInfo.tryGetChunkSizes();
+				if (blockSize != null)
+					reorder(blockSize);
+				else {
+					blockSize = new int[dimensions.length];
+					for (int i = 0; i < blockSize.length; ++i) {
+						if (i >= defaultBlockSize.length || defaultBlockSize[i] <= 0)
+							blockSize[i] = (int)dimensions[i];
+						else
+							blockSize[i] = defaultBlockSize[i];
+					}
+				}
+				return (T)blockSize;
+			}
+
+			if (key.equals("dataType") && type.getTypeName().equals(DataType.class.getTypeName())) {
+
+				final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
+				return (T)getDataType(datasetInfo);
+			}
+
+			if (key.equals("compression") && type.getTypeName().equals(Compression.class.getTypeName()))
+				return (T)new RawCompression();
 		}
-
-		if (key.equals("dataType") && type.getTypeName().equals(DataType.class.getTypeName())) {
-
-			final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
-			return (T)getDataType(datasetInfo);
-		}
-
-		if (key.equals("compression") && type.getTypeName().equals(Compression.class.getTypeName()))
-			return (T)new RawCompression();
 
 		if (!reader.object().hasAttribute(pathName, key))
 			return null;
