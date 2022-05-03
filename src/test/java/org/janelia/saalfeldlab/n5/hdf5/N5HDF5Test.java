@@ -16,6 +16,7 @@
  */
 package org.janelia.saalfeldlab.n5.hdf5;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -47,6 +48,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
@@ -60,6 +62,7 @@ import ch.systemsx.cisd.hdf5.IHDF5Writer;
  * @author Stephan Saalfeld
  * @author Igor Pisarev
  * @author Philipp Hanslovsky
+ * @author John Bogovic
  */
 public class N5HDF5Test extends AbstractN5Test {
 
@@ -307,6 +310,25 @@ public class N5HDF5Test extends AbstractN5Test {
 		assertEquals("int array elem", iElem, attrs.get("iarray"));
 
 		n5.remove("/attributeTest");
+
+		// ensure dataset attributes are mapped
+		long[] dims = new long[] {4,4};
+		int[] blkSz = new int[] {4,4};
+		RawCompression compression = new RawCompression();
+
+		n5.createDataset( "/datasetTest", dims, blkSz, DataType.UINT8, compression );
+		HashMap<String, JsonElement> dsetAttrs = h5.getAttributes( "/datasetTest" );
+		assertTrue( "dset has dimensions", dsetAttrs.containsKey( "dimensions" ));
+		assertTrue( "dset has blockSize", dsetAttrs.containsKey( "blockSize" ));
+		assertTrue( "dset has dataType", dsetAttrs.containsKey( "dataType" ));
+		assertTrue( "dset has compression", dsetAttrs.containsKey( "compression" ));
+
+		final Gson gson = new Gson();
+		assertArrayEquals( "dset dimensions", dims, gson.fromJson( dsetAttrs.get( "dimensions" ), long[].class ));
+		assertArrayEquals( "dset blockSize", blkSz, gson.fromJson( dsetAttrs.get( "blockSize" ), int[].class ));
+		assertEquals( "dset dataType", DataType.UINT8, gson.fromJson( dsetAttrs.get( "dataType" ), DataType.class ));
+
+		n5.remove("/datasetTest");
 	}
 
 	@Test
