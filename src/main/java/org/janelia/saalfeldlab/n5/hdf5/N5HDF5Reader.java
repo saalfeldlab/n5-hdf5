@@ -517,11 +517,11 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 	 * @return the attribute map
 	 */
 	@Override
-	public HashMap<String, JsonElement> getAttributes(String pathName) throws IOException {
+	public HashMap<String, JsonElement> getAttributes(final String pathName) throws IOException {
 
 		final HashMap<String, JsonElement> attrs = new HashMap<>();
-		Map<String, Class<?>> attrClasses = listAttributes(pathName);
-		for (String k : attrClasses.keySet()) {
+		final Map<String, Class<?>> attrClasses = listAttributes(pathName);
+		for (final String k : attrClasses.keySet()) {
 			if (attrClasses.get(k).equals(String.class)) {
 
 				final String s = getAttribute(pathName, k, String.class);
@@ -534,7 +534,7 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 					JsonElement elem;
 					try {
 						elem = gson.fromJson(s, JsonObject.class);
-					} catch (JsonSyntaxException e) {
+					} catch (final JsonSyntaxException e) {
 						elem = gson.toJsonTree(s);
 					}
 					attrs.put(k, elem);
@@ -542,6 +542,17 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 
 			} else
 				attrs.put(k, gson.toJsonTree(getAttribute(pathName, k, attrClasses.get(k))));
+		}
+
+		if (datasetExists(pathName)) {
+
+			final DatasetAttributes datasetAttributes = getDatasetAttributes(pathName);
+			attrs.put("dimensions", gson.toJsonTree(datasetAttributes.getDimensions()));
+			attrs.put("blockSize", gson.toJsonTree(datasetAttributes.getBlockSize()));
+			attrs.put("dataType", gson.toJsonTree(datasetAttributes.getDataType()));
+			final JsonObject fakeRawCompression = new JsonObject();
+			fakeRawCompression.addProperty("type", "raw");
+			attrs.put("compression", fakeRawCompression);
 		}
 
 		return attrs;
