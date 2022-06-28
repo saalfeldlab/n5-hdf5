@@ -549,7 +549,7 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 			final DatasetAttributes datasetAttributes = getDatasetAttributes(pathName);
 			attrs.put("dimensions", gson.toJsonTree(datasetAttributes.getDimensions()));
 			attrs.put("blockSize", gson.toJsonTree(datasetAttributes.getBlockSize()));
-			attrs.put("dataType", gson.toJsonTree(datasetAttributes.getDataType()));
+			attrs.put("dataType", gson.toJsonTree(datasetAttributes.getDataType().toString()));
 			final JsonObject fakeRawCompression = new JsonObject();
 			fakeRawCompression.addProperty("type", "raw");
 			attrs.put("compression", fakeRawCompression);
