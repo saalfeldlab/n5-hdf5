@@ -323,7 +323,7 @@ public class N5HDF5Test extends AbstractN5Test {
 		assertTrue( "dset has dataType", dsetAttrs.containsKey( "dataType" ));
 		assertTrue( "dset has compression", dsetAttrs.containsKey( "compression" ));
 
-		final Gson gson = new Gson();
+		final Gson gson = h5.getGson();
 		assertArrayEquals( "dset dimensions", dims, gson.fromJson( dsetAttrs.get( "dimensions" ), long[].class ));
 		assertArrayEquals( "dset blockSize", blkSz, gson.fromJson( dsetAttrs.get( "blockSize" ), int[].class ));
 		assertEquals( "dset dataType", DataType.UINT8, gson.fromJson( dsetAttrs.get( "dataType" ), DataType.class ));

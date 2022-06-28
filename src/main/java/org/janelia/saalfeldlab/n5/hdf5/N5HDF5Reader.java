@@ -35,6 +35,7 @@ import java.util.Map;
 
 import org.janelia.saalfeldlab.n5.ByteArrayDataBlock;
 import org.janelia.saalfeldlab.n5.Compression;
+import org.janelia.saalfeldlab.n5.CompressionAdapter;
 import org.janelia.saalfeldlab.n5.Compression.CompressionType;
 import org.janelia.saalfeldlab.n5.DataBlock;
 import org.janelia.saalfeldlab.n5.DataType;
@@ -121,6 +122,8 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 			final GsonBuilder gsonBuilder,
 			final int... defaultBlockSize) throws IOException {
 
+		gsonBuilder.registerTypeAdapter(DataType.class, new DataType.JsonAdapter());
+		gsonBuilder.registerTypeHierarchyAdapter(Compression.class, CompressionAdapter.getJsonAdapter());
 		gsonBuilder.disableHtmlEscaping();
 		this.gson = gsonBuilder.create();
 
