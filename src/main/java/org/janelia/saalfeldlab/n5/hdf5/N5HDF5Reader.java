@@ -290,40 +290,44 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 
 		if (!reader.exists(pathName))
 			return null;
+		
+		if (datasetExists(pathName)) {
 
-		if (key.equals("dimensions") && long[].class.isAssignableFrom(clazz)) {
-			final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
-			final long[] dimensions = datasetInfo.getDimensions();
-			reorder(dimensions);
-			return (T)dimensions;
-		}
-
-		if (key.equals("blockSize") && int[].class.isAssignableFrom(clazz)) {
-			final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
-			final long[] dimensions = datasetInfo.getDimensions();
-			int[] blockSize = overrideBlockSize ? null : datasetInfo.tryGetChunkSizes();
-			if (blockSize != null)
-				reorder(blockSize);
-			else {
-				blockSize = new int[dimensions.length];
-				for (int i = 0; i < blockSize.length; ++i) {
-					if (i >= defaultBlockSize.length || defaultBlockSize[i] <= 0)
-						blockSize[i] = (int)dimensions[i];
-					else
-						blockSize[i] = defaultBlockSize[i];
-				}
+			if (key.equals("dimensions") && long[].class.isAssignableFrom(clazz)) {
+				final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
+				final long[] dimensions = datasetInfo.getDimensions();
+				reorder(dimensions);
+				return (T)dimensions;
 			}
-			return (T)blockSize;
+	
+			if (key.equals("blockSize") && int[].class.isAssignableFrom(clazz)) {
+				final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
+				final long[] dimensions = datasetInfo.getDimensions();
+				int[] blockSize = overrideBlockSize ? null : datasetInfo.tryGetChunkSizes();
+				if (blockSize != null)
+					reorder(blockSize);
+				else {
+					blockSize = new int[dimensions.length];
+					for (int i = 0; i < blockSize.length; ++i) {
+						if (i >= defaultBlockSize.length || defaultBlockSize[i] <= 0)
+							blockSize[i] = (int)dimensions[i];
+						else
+							blockSize[i] = defaultBlockSize[i];
+					}
+				}
+				return (T)blockSize;
+			}
+	
+			if (key.equals("dataType") && DataType.class.isAssignableFrom(clazz)) {
+	
+				final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
+				return (T)getDataType(datasetInfo);
+			}
+	
+			if (key.equals("compression") && Compression.class.isAssignableFrom(clazz))
+				return (T)new RawCompression();
+			
 		}
-
-		if (key.equals("dataType") && DataType.class.isAssignableFrom(clazz)) {
-
-			final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
-			return (T)getDataType(datasetInfo);
-		}
-
-		if (key.equals("compression") && Compression.class.isAssignableFrom(clazz))
-			return (T)new RawCompression();
 
 		if (!reader.object().hasAttribute(pathName, key))
 			return null;
@@ -654,6 +658,9 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 
 		if (pathName.equals(""))
 			pathName = "/";
+		
+		if(!datasetExists(pathName))
+			return null;
 
 		final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
 		final long[] dimensions = datasetInfo.getDimensions();
