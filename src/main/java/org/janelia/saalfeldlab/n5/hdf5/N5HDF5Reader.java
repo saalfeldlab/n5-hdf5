@@ -549,7 +549,7 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 					}
 					attrs.put(k, elem);
 				}
-				
+
 			} else
 				attrs.put(k, gson.toJsonTree(getAttribute(pathName, k, attrClasses.get(k))));
 		}
