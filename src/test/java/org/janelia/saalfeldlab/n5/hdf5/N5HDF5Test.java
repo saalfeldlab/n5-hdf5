@@ -19,10 +19,12 @@ package org.janelia.saalfeldlab.n5.hdf5;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -125,6 +127,25 @@ public class N5HDF5Test extends AbstractN5Test {
 		Files.createDirectories(Paths.get(testDirPath).getParent());
 		hdf5Writer = HDF5Factory.open(testDirPath);
 		return new N5HDF5Writer(hdf5Writer);
+	}
+	
+	@Override
+	@Test
+	public void testCreateGroup() {
+
+		try {
+			n5.createGroup(groupName);
+		} catch (final IOException e) {
+			fail(e.getMessage());
+		}
+
+		final Path groupPath = Paths.get(groupName);
+		for (int i = 0; i < groupPath.getNameCount(); ++i)
+			//replace `\` with `/` in the case of Windows
+			if (!n5.exists(groupPath.subpath(0, i + 1)
+					.toString()
+					.replace(File.separatorChar, '/')))
+				fail("Group does not exist");
 	}
 
 	@Override
