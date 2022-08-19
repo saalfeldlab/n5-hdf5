@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
-		<version>31.1.0</version>
+		<version>32.0.0-beta-5</version>
 		<relativePath />
 	</parent>
 
@@ -86,19 +86,23 @@
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
 
+		<!-- TEMP: Inheriting n5 2.5.1 breaks behavior. -->
 		<n5.version>2.4.0</n5.version>
-		<cisd.jhdf5.version>19.04.0</cisd.jhdf5.version>
 	</properties>
 
 	<dependencies>
-
 		<dependency>
 			<groupId>org.janelia.saalfeldlab</groupId>
 			<artifactId>n5</artifactId>
 		</dependency>
+
 		<dependency>
 			<groupId>cisd</groupId>
 			<artifactId>jhdf5</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
 		</dependency>
 
 		<!-- Test dependencies -->
@@ -110,20 +114,9 @@
 		<dependency>
 			<groupId>org.janelia.saalfeldlab</groupId>
 			<artifactId>n5</artifactId>
-			<version>${n5.version}</version>
+			<version>${org.janelia.saalfeldlab.n5.version}</version>
 			<classifier>tests</classifier>
 			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>cisd</groupId>
-			<artifactId>jhdf5</artifactId>
-			<version>${cisd.jhdf5.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.google.code.gson</groupId>
-			<artifactId>gson</artifactId>
 		</dependency>
 	</dependencies>
 
