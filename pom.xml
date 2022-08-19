@@ -85,9 +85,6 @@
 
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
-
-		<!-- TEMP: Inheriting n5 2.5.1 breaks behavior. -->
-		<n5.version>2.4.0</n5.version>
 	</properties>
 
 	<dependencies>
