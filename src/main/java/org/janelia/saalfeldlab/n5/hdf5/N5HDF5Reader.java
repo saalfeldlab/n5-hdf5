@@ -54,6 +54,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
 import ch.systemsx.cisd.base.mdarray.MDByteArray;
@@ -529,12 +530,14 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 		final HashMap<String, JsonElement> attrs = new HashMap<>();
 		final Map<String, Class<?>> attrClasses = listAttributes(pathName);
 		for (final String k : attrClasses.keySet()) {
-			if (attrClasses.get(k).equals(String.class)) {
-
+			if (
+					attrClasses.get(k).equals(Object.class) ||
+					attrClasses.get(k).equals(Object[].class)
+			) {
 				final String s = getAttribute(pathName, k, String.class);
 
 				if (s.isEmpty()) {
-					// check for empty string explicitly because it parsese
+					// check for empty string explicitly because it parses
 					// as a null JsonObject without throwing an exception
 					attrs.put(k, gson.toJsonTree(s));
 				} else {
@@ -792,8 +795,10 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 	}
 
 	/**
-	 * Structured attributes that are stored as JSON will be classified as
-	 * String.class.
+	 * String attributes will be parsed as JSON and classified as
+	 * 1) An Object[] if it is a JsonArray
+	 * 2) A  String   if it is a JsonPrimitive
+	 * 3) An Object   if it is a JsonObject
 	 */
 	@Override
 	public Map<String, Class<?>> listAttributes(final String pathName) throws IOException {
@@ -801,17 +806,37 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 		final String finalPathName = pathName.equals("") ? "/" : pathName;
 
 		final HashMap<String, Class<?>> attributes = new HashMap<>();
+		
 		reader
 				.object()
 				.getAttributeNames(finalPathName)
 				.forEach(
-						attributeName -> attributes
+						attributeName -> {
+							Class<?> clazz = reader
+								.object()
+								.getAttributeInformation(finalPathName, attributeName)
+								.tryGetJavaType();
+							if(clazz.isAssignableFrom(String.class)) {
+								//Attempt to parse the JSON
+								try {
+									String value = reader.string().getAttr(finalPathName, attributeName);
+									JsonElement element = JsonParser.parseString(value);
+									if(element.isJsonArray())
+										clazz = Object[].class;
+									else if(!element.isJsonPrimitive())
+										clazz = Object.class;
+									//A plain String is a JSON primitive
+								} catch(JsonSyntaxException e) {
+									//parsing fail, assume String.class
+								}
+							}
+							attributes
 								.put(
 										attributeName,
-										reader
-												.object()
-												.getAttributeInformation(finalPathName, attributeName)
-												.tryGetJavaType()));
+										clazz
+								);
+						}
+				);
 		return attributes;
 	}
 
