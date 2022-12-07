@@ -385,6 +385,8 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 			return (T)new Double(reader.float64().getAttr(pathName, key));
 		else if (type.isAssignableFrom(float.class))
 			return (T)new Float(reader.float32().getAttr(pathName, key));
+		else if (type.isAssignableFrom(boolean.class))
+			return (T)Boolean.valueOf(reader.bool().getAttr(pathName, key));
 		else if (type.isAssignableFrom(String.class)) {
 			final String attributeString = reader.string().getAttr(pathName, key);
 			if (clazz.isAssignableFrom(String.class))
@@ -499,6 +501,8 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 			return (T)new Double(reader.float64().getAttr(pathName, key));
 		else if (clazz.isAssignableFrom(float.class))
 			return (T)new Float(reader.float32().getAttr(pathName, key));
+		else if (clazz.isAssignableFrom(boolean.class))
+			return (T)Boolean.valueOf(reader.bool().getAttr(pathName, key));
 		else if (clazz.isAssignableFrom(String.class)) {
 			final String attributeString = reader.string().getAttr(pathName, key);
 			if (type.getTypeName().equals(String.class.getTypeName()))
