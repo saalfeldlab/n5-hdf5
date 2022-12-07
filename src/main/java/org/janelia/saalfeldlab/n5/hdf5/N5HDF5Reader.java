@@ -46,6 +46,7 @@ import org.janelia.saalfeldlab.n5.GsonAttributesParser;
 import org.janelia.saalfeldlab.n5.IntArrayDataBlock;
 import org.janelia.saalfeldlab.n5.LongArrayDataBlock;
 import org.janelia.saalfeldlab.n5.N5Reader;
+import org.janelia.saalfeldlab.n5.N5URL;
 import org.janelia.saalfeldlab.n5.RawCompression;
 import org.janelia.saalfeldlab.n5.ShortArrayDataBlock;
 import org.scijava.util.VersionUtils;
@@ -330,8 +331,14 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 			
 		}
 
-		if (!reader.object().hasAttribute(pathName, key))
-			return null;
+		if (!reader.object().hasAttribute(pathName, key)) {
+			/* Try to read the json if possible */
+			if (!reader.object().hasAttribute( pathName, "/" )) {
+				return null;
+			}
+			final JsonElement root = JsonParser.parseString(reader.string().getAttr( pathName, "/" ));
+			return GsonAttributesParser.readAttribute( root,  N5URL.normalizeAttributePath( key), clazz, gson);
+		}
 
 		final HDF5DataTypeInformation attributeInfo = reader.object().getAttributeInformation(pathName, key);
 		final Class<?> type = attributeInfo.tryGetJavaType();
@@ -446,8 +453,14 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 				return (T)new RawCompression();
 		}
 
-		if (!reader.object().hasAttribute(pathName, key))
-			return null;
+		if (!reader.object().hasAttribute(pathName, key)) {
+			/* Try to read the json if possible */
+			if (!reader.object().hasAttribute( pathName, "/" )) {
+				return null;
+			}
+			final JsonElement root = JsonParser.parseString(reader.string().getAttr( pathName, "/" ));
+			return GsonAttributesParser.readAttribute( root,  N5URL.normalizeAttributePath( key), type, gson);
+		}
 
 		final HDF5DataTypeInformation attributeInfo = reader.object().getAttributeInformation(pathName, key);
 		final Class<?> clazz = attributeInfo.tryGetJavaType();
@@ -551,6 +564,11 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 					} catch (final JsonSyntaxException e) {
 						elem = gson.toJsonTree(s);
 					}
+					/* if the root attr, add all it's top-level object names instead */
+					if (k.equals("/") && elem.isJsonObject()) {
+						elem.getAsJsonObject().entrySet().forEach((entry) -> attrs.put(entry.getKey(), entry.getValue()));
+						continue;
+					}
 					attrs.put(k, elem);
 				}
 
@@ -569,6 +587,20 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 		}
 
 		return attrs;
+	}
+
+	@Override
+	public JsonElement getAttributesJson( final String pathName ) throws IOException
+	{
+		final HashMap< String, JsonElement > attributesMap = getAttributes( pathName );
+		final JsonObject attributes = new JsonObject();
+		for ( final Map.Entry< String, JsonElement > keyAttribute: attributesMap.entrySet() )
+		{
+			final String key = keyAttribute.getKey();
+			final JsonElement attribute = keyAttribute.getValue();
+			attributes.add( key, attribute );
+		}
+		return attributes;
 	}
 
 	protected static DataType getDataType(final HDF5DataSetInformation datasetInfo) {
@@ -825,10 +857,28 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 								try {
 									String value = reader.string().getAttr(finalPathName, attributeName);
 									JsonElement element = JsonParser.parseString(value);
-									if(element.isJsonArray())
-										clazz = Object[].class;
-									else if(!element.isJsonPrimitive())
-										clazz = Object.class;
+									if (attributeName.equals("/") && element.isJsonObject()) {
+										/* Add the top level elements */
+										for (final Map.Entry<String, JsonElement> entry : element.getAsJsonObject().entrySet()) {
+											final JsonElement rootElement = entry.getValue();
+											final Class<?> rootClass;
+											if(rootElement.isJsonArray()) {
+												rootClass = Object[].class;
+											}
+											else if(!rootElement.isJsonPrimitive()) {
+												rootClass = Object.class;
+											} else {
+												rootClass = GsonAttributesParser.classForJsonPrimitive(rootElement.getAsJsonPrimitive());
+											}
+											attributes.put(entry.getKey(), rootClass);
+										}
+									} else {
+										if(element.isJsonArray())
+											clazz = Object[].class;
+										else if(!element.isJsonPrimitive())
+											clazz = Object.class;
+									}
+
 									//A plain String is a JSON primitive
 								} catch(JsonSyntaxException e) {
 									//parsing fail, assume String.class

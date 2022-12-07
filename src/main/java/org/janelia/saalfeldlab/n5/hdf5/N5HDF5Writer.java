@@ -25,6 +25,9 @@
  */
 package org.janelia.saalfeldlab.n5.hdf5;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -35,6 +38,8 @@ import org.janelia.saalfeldlab.n5.Compression;
 import org.janelia.saalfeldlab.n5.DataBlock;
 import org.janelia.saalfeldlab.n5.DataType;
 import org.janelia.saalfeldlab.n5.DatasetAttributes;
+import org.janelia.saalfeldlab.n5.GsonAttributesParser;
+import org.janelia.saalfeldlab.n5.N5URL;
 import org.janelia.saalfeldlab.n5.N5Writer;
 import org.janelia.saalfeldlab.n5.RawCompression;
 
@@ -287,6 +292,14 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 		if (pathName.equals(""))
 			pathName = "/";
 
+		/* Any key that looks like an attribute path is treated as one;
+		 *	The only exception are top level elements with a single leading `/` */
+		final String[] attributePathTokens = key.split("/");
+		if (attributePathTokens.length > 2 || (attributePathTokens.length > 1 && attributePathTokens[0].length() > 0) ) {
+			writeAttributeAsJson(pathName, key, attribute);
+			return;
+		}
+
 		if (attribute == null)
 			writer.object().deleteAttribute(pathName, key);
 		else if (attribute instanceof Boolean)
@@ -319,8 +332,19 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 			writer.float64().setArrayAttr(pathName, key, (double[])attribute);
 		else if (attribute instanceof String[])
 			writer.string().setArrayAttr(pathName, key, (String[])attribute);
-		else
-			writer.string().setAttr(pathName, key, gson.toJson(attribute));
+		else {
+			writeAttributeAsJson(pathName, key, attribute);
+		}
+	}
+
+	private <T> void writeAttributeAsJson(String pathName, String key, T attribute) {
+		/* Get the existing attributes, or create the root if not */
+		JsonElement root = null;
+		if (writer.object().hasAttribute(pathName, "/")) {
+			root = JsonParser.parseString(writer.string().getAttr(pathName, "/"));
+		}
+		root = GsonAttributesParser.insertAttribute(root, N5URL.normalizeAttributePath(key), attribute, gson );
+		writer.string().setAttr(pathName, "/", gson.toJson(root));
 	}
 
 	@Override
