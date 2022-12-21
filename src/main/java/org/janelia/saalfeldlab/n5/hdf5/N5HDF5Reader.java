@@ -84,6 +84,8 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 
 	protected final Gson gson;
 
+	protected static final String N5_JSON_ROOT_KEY = "N5_JSON_ROOT";
+
 	/**
 	 * SemVer version of this N5-HDF5 spec.
 	 */
@@ -285,10 +287,14 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T> T getAttribute(String pathName, final String key, final Class<T> clazz) throws IOException {
+	public <T> T getAttribute(String pathName, String key, final Class<T> clazz) throws IOException {
 
 		if (pathName.equals(""))
 			pathName = "/";
+
+		if (key.equals("") || key.equals(N5_JSON_ROOT_KEY)) {
+			key ="/";
+		}
 
 		if (!reader.exists(pathName))
 			return null;
@@ -333,10 +339,10 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 
 		if (!reader.object().hasAttribute(pathName, key)) {
 			/* Try to read the json if possible */
-			if (!reader.object().hasAttribute( pathName, "/" )) {
+			if (!reader.object().hasAttribute( pathName, N5_JSON_ROOT_KEY )) {
 				return null;
 			}
-			final JsonElement root = JsonParser.parseString(reader.string().getAttr( pathName, "/" ));
+			final JsonElement root = JsonParser.parseString(reader.string().getAttr( pathName, N5_JSON_ROOT_KEY ));
 			return GsonAttributesParser.readAttribute( root,  N5URL.normalizeAttributePath( key), clazz, gson);
 		}
 
@@ -453,12 +459,12 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 				return (T)new RawCompression();
 		}
 
-		if (!reader.object().hasAttribute(pathName, key)) {
+		if (key.trim().isEmpty() || !reader.object().hasAttribute(pathName, key)) {
 			/* Try to read the json if possible */
-			if (!reader.object().hasAttribute( pathName, "/" )) {
+			if (!reader.object().hasAttribute( pathName, N5_JSON_ROOT_KEY )) {
 				return null;
 			}
-			final JsonElement root = JsonParser.parseString(reader.string().getAttr( pathName, "/" ));
+			final JsonElement root = JsonParser.parseString(reader.string().getAttr( pathName, N5_JSON_ROOT_KEY ));
 			return GsonAttributesParser.readAttribute( root,  N5URL.normalizeAttributePath( key), type, gson);
 		}
 
@@ -565,7 +571,7 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 						elem = gson.toJsonTree(s);
 					}
 					/* if the root attr, add all it's top-level object names instead */
-					if (k.equals("/") && elem.isJsonObject()) {
+					if (k.equals(N5_JSON_ROOT_KEY) && elem.isJsonObject()) {
 						elem.getAsJsonObject().entrySet().forEach((entry) -> attrs.put(entry.getKey(), entry.getValue()));
 						continue;
 					}
@@ -857,7 +863,7 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 								try {
 									String value = reader.string().getAttr(finalPathName, attributeName);
 									JsonElement element = JsonParser.parseString(value);
-									if (attributeName.equals("/") && element.isJsonObject()) {
+									if (attributeName.equals(N5_JSON_ROOT_KEY) && element.isJsonObject()) {
 										/* Add the top level elements */
 										for (final Map.Entry<String, JsonElement> entry : element.getAsJsonObject().entrySet()) {
 											final JsonElement rootElement = entry.getValue();

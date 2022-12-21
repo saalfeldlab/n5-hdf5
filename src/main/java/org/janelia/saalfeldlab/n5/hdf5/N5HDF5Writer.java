@@ -340,11 +340,11 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	private <T> void writeAttributeAsJson(String pathName, String key, T attribute) {
 		/* Get the existing attributes, or create the root if not */
 		JsonElement root = null;
-		if (writer.object().hasAttribute(pathName, "/")) {
-			root = JsonParser.parseString(writer.string().getAttr(pathName, "/"));
+		if (writer.object().hasAttribute(pathName, N5_JSON_ROOT_KEY)) {
+			root = JsonParser.parseString(writer.string().getAttr(pathName, N5_JSON_ROOT_KEY));
 		}
 		root = GsonAttributesParser.insertAttribute(root, N5URL.normalizeAttributePath(key), attribute, gson );
-		writer.string().setAttr(pathName, "/", gson.toJson(root));
+		writer.string().setAttr(pathName, N5_JSON_ROOT_KEY, gson.toJson(root));
 	}
 
 	@Override
