@@ -287,7 +287,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 	public <T> void setAttribute(
 			String pathName,
 			final String key,
-			final T attribute) {
+			final T attribute) throws IOException {
 
 		if (pathName.equals(""))
 			pathName = "/";
@@ -298,11 +298,17 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 		/* Any key that looks like an attribute path is treated as one;
 		 *	The only exception are top level elements with a single leading `/` */
 		final String[] attributePathTokens = key.split("/");
-		if (attributePathTokens.length > 2 || (attributePathTokens.length > 1 && attributePathTokens[0].length() > 0) ) {
+		if (key.trim().isEmpty() || key.trim().equals("/") || attributePathTokens.length > 2 || (attributePathTokens.length > 1 && attributePathTokens[0].length() > 0) ) {
 			writeAttributeAsJson(pathName, key, attribute);
 			return;
 		}
 
+		if (!writeHdf5Attribute(pathName, key, attribute))
+			writeAttributeAsJson(pathName, key, attribute);
+	}
+
+	private <T> Boolean writeHdf5Attribute(String pathName, String key, T attribute) {
+		boolean written = true;
 		if (attribute == null)
 			writer.object().deleteAttribute(pathName, key);
 		else if (attribute instanceof Boolean)
@@ -335,9 +341,14 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 			writer.float64().setArrayAttr(pathName, key, (double[])attribute);
 		else if (attribute instanceof String[])
 			writer.string().setArrayAttr(pathName, key, (String[])attribute);
-		else {
-			writeAttributeAsJson(pathName, key, attribute);
-		}
+		else
+			written = false;
+		return written;
+	}
+
+	private <T> void writeAttributeAsRootJson(String pathName, String key, T attribute) {
+		/* Get the existing attributes, or create the root if not */
+		writer.string().setAttr(pathName, key, gson.toJson(attribute));
 	}
 
 	private <T> void writeAttributeAsJson(String pathName, String key, T attribute) {
@@ -359,8 +370,12 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 			pathName = "/";
 		createGroup(pathName);
 
-		for (final Entry<String, ?> attribute : attributes.entrySet())
-			setAttribute(pathName, attribute.getKey(), attribute.getValue());
+		for (final Entry<String, ?> attribute : attributes.entrySet()) {
+			final String key = attribute.getKey();
+			final Object value = attribute.getValue();
+			if (!writeHdf5Attribute(pathName, key, value))
+				writeAttributeAsRootJson(pathName, key, value);
+		}
 	}
 
 	@Override
