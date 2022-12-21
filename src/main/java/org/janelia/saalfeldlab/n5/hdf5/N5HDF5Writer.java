@@ -292,6 +292,9 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 		if (pathName.equals(""))
 			pathName = "/";
 
+		if (!datasetExists(pathName))
+			createGroup(pathName);
+
 		/* Any key that looks like an attribute path is treated as one;
 		 *	The only exception are top level elements with a single leading `/` */
 		final String[] attributePathTokens = key.split("/");
@@ -354,6 +357,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 
 		if (pathName.equals(""))
 			pathName = "/";
+		createGroup(pathName);
 
 		for (final Entry<String, ?> attribute : attributes.entrySet())
 			setAttribute(pathName, attribute.getKey(), attribute.getValue());
