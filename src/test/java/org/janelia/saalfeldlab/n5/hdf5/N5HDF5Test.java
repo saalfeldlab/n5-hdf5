@@ -72,17 +72,8 @@ import ch.systemsx.cisd.hdf5.IHDF5Writer;
  */
 public class N5HDF5Test extends AbstractN5Test {
 
-	private static String testFilePath;
 	private static int[] defaultBlockSize = new int[]{5, 6, 7};
 	private static IHDF5Writer hdf5Writer;
-
-	static {
-		try {
-			testFilePath = Files.createTempFile( "n5-hdf5-test-", ".hdf5" ).toFile().getCanonicalPath();
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
 
 	public static class Structured {
 
@@ -136,8 +127,24 @@ public class N5HDF5Test extends AbstractN5Test {
 	@Override
 	protected N5Writer createN5Writer() throws IOException {
 
-		Files.createDirectories(Paths.get( testFilePath ).getParent());
-		hdf5Writer = HDF5Factory.open( testFilePath );
+		return createN5Writer(createTestFilePath());
+	}
+
+	private static String createTestFilePath() throws IOException {
+
+		return Files.createTempFile("n5-hdf5-test-", ".hdf5").toFile().getCanonicalPath();
+	}
+
+	@Override
+	protected N5Writer createN5Writer(String location) throws IOException {
+
+		Path locationPath = Paths.get(location);
+		if (Files.isDirectory(locationPath)) {
+			locationPath = locationPath.resolve("test.hdf5");
+		}
+
+		Files.createDirectories(locationPath.getParent());
+		hdf5Writer = HDF5Factory.open(locationPath.toFile().getCanonicalPath());
 		return new N5HDF5Writer(hdf5Writer);
 	}
 	
@@ -214,12 +221,14 @@ public class N5HDF5Test extends AbstractN5Test {
 	@Test
 	public void testOverrideBlockSize() throws IOException {
 
+		final String testFilePath = createTestFilePath();
+		final N5Writer n5HDF5Writer = createN5Writer(testFilePath);
 		final DatasetAttributes attributes = new DatasetAttributes(dimensions, blockSize, DataType.INT8, new GzipCompression());
-		n5.createDataset(datasetName, attributes);
+		n5HDF5Writer.createDataset(datasetName, attributes);
 
 		hdf5Writer.close();
 		hdf5Writer = null;
-		n5 = null;
+		n5HDF5Writer.close();
 
 		final IHDF5Reader hdf5Reader = HDF5Factory.openForReading( testFilePath );
 		final N5HDF5Reader n5Reader = new N5HDF5Reader(hdf5Reader, defaultBlockSize);
@@ -238,13 +247,13 @@ public class N5HDF5Test extends AbstractN5Test {
 	public void testDefaultBlockSizeGetter() throws IOException {
 		// do not pass array
 		{
-			try (final N5HDF5Reader h5  = new N5HDF5Writer( testFilePath )) {
+			try (final N5HDF5Reader h5 = new N5HDF5Writer(createTestFilePath())) {
 				Assert.assertArrayEquals(new int[]{}, h5.getDefaultBlockSizeCopy());
 			}
 		}
 		// pass array
 		{
-			try (final N5HDF5Reader h5 = new N5HDF5Writer( testFilePath, defaultBlockSize)) {
+			try (final N5HDF5Reader h5 = new N5HDF5Writer(createTestFilePath(), defaultBlockSize)) {
 				Assert.assertArrayEquals(defaultBlockSize, h5.getDefaultBlockSizeCopy());
 			}
 		}
@@ -253,6 +262,7 @@ public class N5HDF5Test extends AbstractN5Test {
 	@Test
 	public void testOverrideBlockSizeGetter() throws IOException {
 		// default behavior
+		final String testFilePath = createTestFilePath();
 		{
 			try (final N5HDF5Reader h5 = new N5HDF5Writer( testFilePath )) {
 				Assert.assertFalse(h5.doesOverrideBlockSize());
@@ -274,8 +284,10 @@ public class N5HDF5Test extends AbstractN5Test {
 
 	@Test
 	public void testFilenameGetter() throws IOException {
-		try (final N5HDF5Reader h5  = new N5HDF5Writer( testFilePath )) {
-			Assert.assertEquals(new File( testFilePath ), h5.getFilename());
+
+		String testFilePath = createTestFilePath();
+		try (final N5HDF5Reader h5 = new N5HDF5Writer(testFilePath)) {
+			Assert.assertEquals(new File(testFilePath), h5.getFilename());
 		}
 
 	}
