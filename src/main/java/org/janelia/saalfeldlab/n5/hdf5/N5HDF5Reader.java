@@ -340,25 +340,49 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 				return (T)reader.int64().getArrayAttr(pathName, key);
 			else
 				return (T)reader.uint64().getArrayAttr(pathName, key);
-		if (type.isAssignableFrom(int[].class))
+		else if (type.isAssignableFrom(long[][].class))
+			if (attributeInfo.isSigned())
+				return (T)reader.int64().getMatrixAttr(pathName, key);
+			else
+				return (T)reader.uint64().getMatrixAttr(pathName, key);
+		else if (type.isAssignableFrom(int[].class))
 			if (attributeInfo.isSigned())
 				return (T)reader.int32().getArrayAttr(pathName, key);
 			else
 				return (T)reader.uint32().getArrayAttr(pathName, key);
-		if (type.isAssignableFrom(short[].class))
+		else if (type.isAssignableFrom(int[][].class))
+			if (attributeInfo.isSigned())
+				return (T)reader.int32().getMatrixAttr(pathName, key);
+			else
+				return (T)reader.uint32().getMatrixAttr(pathName, key);
+		else if (type.isAssignableFrom(short[].class))
 			if (attributeInfo.isSigned())
 				return (T)reader.int16().getArrayAttr(pathName, key);
 			else
 				return (T)reader.uint16().getArrayAttr(pathName, key);
-		if (type.isAssignableFrom(byte[].class)) {
+		else if (type.isAssignableFrom(short[][].class))
+			if (attributeInfo.isSigned())
+				return (T)reader.int16().getMatrixAttr(pathName, key);
+			else
+				return (T)reader.uint16().getMatrixAttr(pathName, key);
+		else if (type.isAssignableFrom(byte[].class))
 			if (attributeInfo.isSigned())
 				return (T)reader.int8().getArrayAttr(pathName, key);
 			else
 				return (T)reader.uint8().getArrayAttr(pathName, key);
-		} else if (type.isAssignableFrom(double[].class))
+		else if (type.isAssignableFrom(byte[][].class))
+			if (attributeInfo.isSigned())
+				return (T)reader.int8().getMatrixAttr(pathName, key);
+			else
+				return (T)reader.uint8().getMatrixAttr(pathName, key);
+		else if (type.isAssignableFrom(double[].class))
 			return (T)reader.float64().getArrayAttr(pathName, key);
+		else if (type.isAssignableFrom(double[][].class))
+			return (T)reader.float64().getMatrixAttr(pathName, key);
 		else if (type.isAssignableFrom(float[].class))
 			return (T)reader.float32().getArrayAttr(pathName, key);
+		else if (type.isAssignableFrom(float[][].class))
+			return (T)reader.float32().getMatrixAttr(pathName, key);
 		else if (type.isAssignableFrom(String[].class))
 			return (T)reader.string().getArrayAttr(pathName, key);
 		if (type.isAssignableFrom(long.class)) {
@@ -454,25 +478,49 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 				return (T)reader.int64().getArrayAttr(pathName, key);
 			else
 				return (T)reader.uint64().getArrayAttr(pathName, key);
-		if (clazz.isAssignableFrom(int[].class))
+		else if (clazz.isAssignableFrom(long[][].class))
+			if (attributeInfo.isSigned())
+				return (T)reader.int64().getMatrixAttr(pathName, key);
+			else
+				return (T)reader.uint64().getMatrixAttr(pathName, key);
+		else if (clazz.isAssignableFrom(int[].class))
 			if (attributeInfo.isSigned())
 				return (T)reader.int32().getArrayAttr(pathName, key);
 			else
 				return (T)reader.uint32().getArrayAttr(pathName, key);
-		if (clazz.isAssignableFrom(short[].class))
+		else if (clazz.isAssignableFrom(int[][].class))
+			if (attributeInfo.isSigned())
+				return (T)reader.int32().getMatrixAttr(pathName, key);
+			else
+				return (T)reader.uint32().getMatrixAttr(pathName, key);
+		else if (clazz.isAssignableFrom(short[].class))
 			if (attributeInfo.isSigned())
 				return (T)reader.int16().getArrayAttr(pathName, key);
 			else
 				return (T)reader.uint16().getArrayAttr(pathName, key);
-		if (clazz.isAssignableFrom(byte[].class)) {
+		else if (clazz.isAssignableFrom(short[][].class))
+			if (attributeInfo.isSigned())
+				return (T)reader.int16().getMatrixAttr(pathName, key);
+			else
+				return (T)reader.uint16().getMatrixAttr(pathName, key);
+		else if (clazz.isAssignableFrom(byte[].class))
 			if (attributeInfo.isSigned())
 				return (T)reader.int8().getArrayAttr(pathName, key);
 			else
 				return (T)reader.uint8().getArrayAttr(pathName, key);
-		} else if (clazz.isAssignableFrom(double[].class))
+		else if (clazz.isAssignableFrom(byte[][].class))
+			if (attributeInfo.isSigned())
+				return (T)reader.int8().getMatrixAttr(pathName, key);
+			else
+				return (T)reader.uint8().getMatrixAttr(pathName, key);
+		else if (clazz.isAssignableFrom(double[].class))
 			return (T)reader.float64().getArrayAttr(pathName, key);
+		else if (clazz.isAssignableFrom(double[][].class))
+			return (T)reader.float64().getMatrixAttr(pathName, key);
 		else if (clazz.isAssignableFrom(float[].class))
 			return (T)reader.float32().getArrayAttr(pathName, key);
+		else if (clazz.isAssignableFrom(float[][].class))
+			return (T)reader.float32().getMatrixAttr(pathName, key);
 		else if (clazz.isAssignableFrom(String[].class))
 			return (T)reader.string().getArrayAttr(pathName, key);
 		if (clazz.isAssignableFrom(long.class)) {

@@ -307,16 +307,28 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 			writer.string().setAttr(pathName, key, (String)attribute);
 		else if (attribute instanceof byte[])
 			writer.int8().setArrayAttr(pathName, key, (byte[])attribute);
+		else if (attribute instanceof byte[][])
+			writer.int8().setMatrixAttr(pathName, key, (byte[][])attribute);
 		else if (attribute instanceof short[])
 			writer.int16().setArrayAttr(pathName, key, (short[])attribute);
+		else if (attribute instanceof short[][])
+			writer.int16().setMatrixAttr(pathName, key, (short[][])attribute);
 		else if (attribute instanceof int[])
 			writer.int32().setArrayAttr(pathName, key, (int[])attribute);
+		else if (attribute instanceof int[][])
+			writer.int32().setMatrixAttr(pathName, key, (int[][])attribute);
 		else if (attribute instanceof long[])
 			writer.int64().setArrayAttr(pathName, key, (long[])attribute);
+		else if (attribute instanceof long[][])
+			writer.int64().setMatrixAttr(pathName, key, (long[][])attribute);
 		else if (attribute instanceof float[])
 			writer.float32().setArrayAttr(pathName, key, (float[])attribute);
+		else if (attribute instanceof float[][])
+			writer.float32().setMatrixAttr(pathName, key, (float[][])attribute);
 		else if (attribute instanceof double[])
 			writer.float64().setArrayAttr(pathName, key, (double[])attribute);
+		else if (attribute instanceof double[][])
+			writer.float64().setMatrixAttr(pathName, key, (double[][])attribute);
 		else if (attribute instanceof String[])
 			writer.string().setArrayAttr(pathName, key, (String[])attribute);
 		else
