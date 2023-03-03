@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.function.Predicate;
 
+import com.google.gson.GsonBuilder;
 import org.janelia.saalfeldlab.n5.AbstractN5Test;
 import org.janelia.saalfeldlab.n5.ByteArrayDataBlock;
 import org.janelia.saalfeldlab.n5.Compression;
@@ -130,6 +131,18 @@ public class N5HDF5Test extends AbstractN5Test {
 		return createN5Writer(createTestFilePath());
 	}
 
+	@Override protected N5Writer createN5Writer(String location, GsonBuilder gson) throws IOException {
+
+		hdf5Writer = createHDF5Writer(location);
+		return new N5HDF5Writer(hdf5Writer, false, gson);
+	}
+
+	@Override protected N5Reader createN5Reader(String location, GsonBuilder gson) throws IOException {
+
+		hdf5Writer = createHDF5Writer(location);
+		return new N5HDF5Reader(hdf5Writer, false, gson);
+	}
+
 	private static String createTestFilePath() throws IOException {
 
 		return Files.createTempFile("n5-hdf5-test-", ".hdf5").toFile().getCanonicalPath();
@@ -138,16 +151,21 @@ public class N5HDF5Test extends AbstractN5Test {
 	@Override
 	protected N5Writer createN5Writer(String location) throws IOException {
 
+		hdf5Writer = createHDF5Writer(location);
+		return new N5HDF5Writer(hdf5Writer);
+	}
+
+	private static IHDF5Writer createHDF5Writer(String location) throws IOException {
+
 		Path locationPath = Paths.get(location);
 		if (Files.isDirectory(locationPath)) {
 			locationPath = locationPath.resolve("test.hdf5");
 		}
 
 		Files.createDirectories(locationPath.getParent());
-		hdf5Writer = HDF5Factory.open(locationPath.toFile().getCanonicalPath());
-		return new N5HDF5Writer(hdf5Writer);
+		return HDF5Factory.open(locationPath.toFile().getCanonicalPath());
 	}
-	
+
 	@Override
 	@Test
 	public void testCreateGroup() {
@@ -317,63 +335,70 @@ public class N5HDF5Test extends AbstractN5Test {
 	@Test
 	public void testAttributesAsJson() throws IOException {
 
-		N5HDF5Writer h5 = (N5HDF5Writer) n5;
-		final Structured attribute = new Structured();
-		attribute.name = "myName";
-		attribute.id = 20;
-		attribute.data = new double[] {1, 2, 3, 4};
+		File tmpFile = Files.createTempDirectory("nulls-test-").toFile();
+		tmpFile.deleteOnExit();
+		String canonicalPath = tmpFile.getCanonicalPath();
+		/* serializeNulls*/
+		try (N5Writer writer = createN5Writer(canonicalPath, new GsonBuilder().serializeNulls())) {
 
-		final String string = "a string";
-		final String emptyString = "";
-		final double[] darray = new double[] {0.1,0.2,0.3,0.4,0.5};
-		final int[] iarray = new int[] {1,2,3,4,5};
+			N5HDF5Writer h5 = (N5HDF5Writer)writer;
+			final Structured attribute = new Structured();
+			attribute.name = "myName";
+			attribute.id = 20;
+			attribute.data = new double[]{1, 2, 3, 4};
 
-		final JsonElement oElem = h5.getGson().toJsonTree( attribute );
-		final JsonElement sElem = h5.getGson().toJsonTree( string );
-		final JsonElement esElem = h5.getGson().toJsonTree( emptyString );
-		final JsonElement dElem = h5.getGson().toJsonTree( darray );
-		final JsonElement iElem = h5.getGson().toJsonTree( iarray );
+			final String string = "a string";
+			final String emptyString = "";
+			final double[] darray = new double[]{0.1, 0.2, 0.3, 0.4, 0.5};
+			final int[] iarray = new int[]{1, 2, 3, 4, 5};
 
-		n5.createGroup("/attributeTest");
-		n5.setAttribute("/attributeTest", "myAttribute", attribute);
-		n5.setAttribute("/attributeTest", "string", string );
-		n5.setAttribute("/attributeTest", "emptyString", emptyString );
-		n5.setAttribute("/attributeTest", "darray", darray );
-		n5.setAttribute("/attributeTest", "iarray", iarray );
+			final JsonElement oElem = h5.getGson().toJsonTree(attribute);
+			final JsonElement sElem = h5.getGson().toJsonTree(string);
+			final JsonElement esElem = h5.getGson().toJsonTree(emptyString);
+			final JsonElement dElem = h5.getGson().toJsonTree(darray);
+			final JsonElement iElem = h5.getGson().toJsonTree(iarray);
 
-		HashMap<String, JsonElement> attrs = h5.getAttributes( "/attributeTest" );
-		assertTrue( "has object attribute", attrs.containsKey("myAttribute") );
-		assertTrue( "has string attribute", attrs.containsKey("string") );
-		assertTrue( "has empty string attribute", attrs.containsKey("emptyString") );
-		assertTrue( "has d-array attribute", attrs.containsKey("darray") );
-		assertTrue( "has i-array attribute", attrs.containsKey("iarray") );
+			writer.createGroup("/attributeTest");
+			writer.setAttribute("/attributeTest", "myAttribute", attribute);
+			writer.setAttribute("/attributeTest", "string", string);
+			writer.setAttribute("/attributeTest", "emptyString", emptyString);
+			writer.setAttribute("/attributeTest", "darray", darray);
+			writer.setAttribute("/attributeTest", "iarray", iarray);
 
-		assertEquals("object elem", oElem, attrs.get("myAttribute"));
-		assertEquals("string elem", sElem, attrs.get("string"));
-		assertEquals("empty string elem", esElem, attrs.get("emptyString"));
-		assertEquals("double array elem", dElem, attrs.get("darray"));
-		assertEquals("int array elem", iElem, attrs.get("iarray"));
+			HashMap<String, JsonElement> attrs = h5.getAttributesMap("/attributeTest");
+			assertTrue("has object attribute", attrs.containsKey("myAttribute"));
+			assertTrue("has string attribute", attrs.containsKey("string"));
+			assertTrue("has empty string attribute", attrs.containsKey("emptyString"));
+			assertTrue("has d-array attribute", attrs.containsKey("darray"));
+			assertTrue("has i-array attribute", attrs.containsKey("iarray"));
 
-		n5.remove("/attributeTest");
+			assertEquals("object elem", oElem, attrs.get("myAttribute"));
+			assertEquals("string elem", sElem, attrs.get("string"));
+			assertEquals("empty string elem", esElem, attrs.get("emptyString"));
+			assertEquals("double array elem", dElem, attrs.get("darray"));
+			assertEquals("int array elem", iElem, attrs.get("iarray"));
 
-		// ensure dataset attributes are mapped
-		long[] dims = new long[] {4,4};
-		int[] blkSz = new int[] {4,4};
-		RawCompression compression = new RawCompression();
+			writer.remove("/attributeTest");
 
-		n5.createDataset( "/datasetTest", dims, blkSz, DataType.UINT8, compression );
-		HashMap<String, JsonElement> dsetAttrs = h5.getAttributes( "/datasetTest" );
-		assertTrue( "dset has dimensions", dsetAttrs.containsKey( "dimensions" ));
-		assertTrue( "dset has blockSize", dsetAttrs.containsKey( "blockSize" ));
-		assertTrue( "dset has dataType", dsetAttrs.containsKey( "dataType" ));
-		assertTrue( "dset has compression", dsetAttrs.containsKey( "compression" ));
+			// ensure dataset attributes are mapped
+			long[] dims = new long[]{4, 4};
+			int[] blkSz = new int[]{4, 4};
+			RawCompression compression = new RawCompression();
 
-		final Gson gson = h5.getGson();
-		assertArrayEquals( "dset dimensions", dims, gson.fromJson( dsetAttrs.get( "dimensions" ), long[].class ));
-		assertArrayEquals( "dset blockSize", blkSz, gson.fromJson( dsetAttrs.get( "blockSize" ), int[].class ));
-		assertEquals( "dset dataType", DataType.UINT8, gson.fromJson( dsetAttrs.get( "dataType" ), DataType.class ));
+			writer.createDataset("/datasetTest", dims, blkSz, DataType.UINT8, compression);
+			HashMap<String, JsonElement> dsetAttrs = h5.getAttributesMap("/datasetTest");
+			assertTrue("dset has dimensions", dsetAttrs.containsKey("dimensions"));
+			assertTrue("dset has blockSize", dsetAttrs.containsKey("blockSize"));
+			assertTrue("dset has dataType", dsetAttrs.containsKey("dataType"));
+			assertTrue("dset has compression", dsetAttrs.containsKey("compression"));
 
-		n5.remove("/datasetTest");
+			final Gson gson = h5.getGson();
+			assertArrayEquals("dset dimensions", dims, gson.fromJson(dsetAttrs.get("dimensions"), long[].class));
+			assertArrayEquals("dset blockSize", blkSz, gson.fromJson(dsetAttrs.get("blockSize"), int[].class));
+			assertEquals("dset dataType", DataType.UINT8, gson.fromJson(dsetAttrs.get("dataType"), DataType.class));
+
+			writer.remove("/datasetTest");
+		}
 	}
 
 	@Test

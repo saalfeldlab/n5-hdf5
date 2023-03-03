@@ -1,16 +1,16 @@
 /**
  * Copyright (c) 2017, Stephan Saalfeld
  * All rights reserved.
- *
+ * <p>
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *
+ * <p>
  * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
+ * this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ * <p>
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -25,39 +25,6 @@
  */
 package org.janelia.saalfeldlab.n5.hdf5;
 
-import java.io.Closeable;
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Type;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.janelia.saalfeldlab.n5.ByteArrayDataBlock;
-import org.janelia.saalfeldlab.n5.Compression;
-import org.janelia.saalfeldlab.n5.CompressionAdapter;
-import org.janelia.saalfeldlab.n5.Compression.CompressionType;
-import org.janelia.saalfeldlab.n5.DataBlock;
-import org.janelia.saalfeldlab.n5.DataType;
-import org.janelia.saalfeldlab.n5.DatasetAttributes;
-import org.janelia.saalfeldlab.n5.DoubleArrayDataBlock;
-import org.janelia.saalfeldlab.n5.FloatArrayDataBlock;
-import org.janelia.saalfeldlab.n5.GsonAttributesParser;
-import org.janelia.saalfeldlab.n5.IntArrayDataBlock;
-import org.janelia.saalfeldlab.n5.LongArrayDataBlock;
-import org.janelia.saalfeldlab.n5.N5Reader;
-import org.janelia.saalfeldlab.n5.N5URL;
-import org.janelia.saalfeldlab.n5.RawCompression;
-import org.janelia.saalfeldlab.n5.ShortArrayDataBlock;
-import org.scijava.util.VersionUtils;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
-
 import ch.systemsx.cisd.base.mdarray.MDByteArray;
 import ch.systemsx.cisd.base.mdarray.MDDoubleArray;
 import ch.systemsx.cisd.base.mdarray.MDFloatArray;
@@ -68,6 +35,39 @@ import ch.systemsx.cisd.hdf5.HDF5DataSetInformation;
 import ch.systemsx.cisd.hdf5.HDF5DataTypeInformation;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.reflect.TypeToken;
+import org.janelia.saalfeldlab.n5.ByteArrayDataBlock;
+import org.janelia.saalfeldlab.n5.Compression;
+import org.janelia.saalfeldlab.n5.Compression.CompressionType;
+import org.janelia.saalfeldlab.n5.CompressionAdapter;
+import org.janelia.saalfeldlab.n5.DataBlock;
+import org.janelia.saalfeldlab.n5.DataType;
+import org.janelia.saalfeldlab.n5.DatasetAttributes;
+import org.janelia.saalfeldlab.n5.DoubleArrayDataBlock;
+import org.janelia.saalfeldlab.n5.FloatArrayDataBlock;
+import org.janelia.saalfeldlab.n5.GsonAttributesParser;
+import org.janelia.saalfeldlab.n5.GsonN5Reader;
+import org.janelia.saalfeldlab.n5.IntArrayDataBlock;
+import org.janelia.saalfeldlab.n5.LongArrayDataBlock;
+import org.janelia.saalfeldlab.n5.N5Reader;
+import org.janelia.saalfeldlab.n5.N5URL;
+import org.janelia.saalfeldlab.n5.RawCompression;
+import org.janelia.saalfeldlab.n5.ShortArrayDataBlock;
+import org.scijava.util.VersionUtils;
+
+import java.io.Closeable;
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Best effort {@link N5Reader} implementation for HDF5 files.
@@ -80,7 +80,7 @@ import ch.systemsx.cisd.hdf5.IHDF5Reader;
  * @author Stephan Saalfeld
  * @author Philipp Hanslovsky
  */
-public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
+public class N5HDF5Reader implements GsonN5Reader, GsonAttributesParser, Closeable {
 
 	protected final Gson gson;
 
@@ -118,7 +118,7 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
-     *            the exception
+	 *            the exception
 	 */
 	public N5HDF5Reader(
 			final IHDF5Reader reader,
@@ -158,7 +158,7 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
-     *            the exception
+	 *            the exception
 	 */
 	public N5HDF5Reader(
 			final IHDF5Reader reader,
@@ -178,7 +178,7 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
-     *            the exception
+	 *            the exception
 	 */
 	public N5HDF5Reader(
 			final IHDF5Reader reader,
@@ -203,7 +203,7 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
-     *            the exception
+	 *            the exception
 	 */
 	public N5HDF5Reader(
 			final String hdf5Path,
@@ -228,7 +228,7 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
-     *            the exception
+	 *            the exception
 	 */
 	public N5HDF5Reader(
 			final String hdf5Path,
@@ -248,7 +248,7 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
 	 * @throws IOException
-     *            the exception
+	 *            the exception
 	 */
 	public N5HDF5Reader(
 			final String hdf5Path,
@@ -259,14 +259,15 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 
 	@Override
 	public Gson getGson() {
+
 		return gson;
 	}
 
 	@Override
 	public boolean exists(String pathName) {
 
-		if (pathName.equals(""))
-			pathName = "/";
+		final String normalizedPathName = N5URL.normalizePath(pathName);
+		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
 
 		return reader.exists(pathName);
 	}
@@ -274,8 +275,8 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 	@Override
 	public String[] list(String pathName) throws IOException {
 
-		if (pathName.equals(""))
-			pathName = "/";
+		final String normalizedPathName = N5URL.normalizePath(pathName);
+		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
 
 		try {
 			final List<String> members = reader.object().getGroupMembers(pathName);
@@ -287,28 +288,28 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T> T getAttribute(String pathName, String key, final Class<T> clazz) throws IOException {
+	public <T> T getAttribute(String pathName, String key, final Type type) throws IOException {
 
-		if (pathName.equals(""))
-			pathName = "/";
+		final String normalizedPathName = N5URL.normalizePath(pathName);
+		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
 
-		if (key.equals("") || key.equals(N5_JSON_ROOT_KEY)) {
-			key ="/";
-		}
+		final String normalizedAttrPath = N5URL.normalizeAttributePath(key);
+		final String normalizedKey = normalizedAttrPath.isEmpty() ? "/" : normalizedAttrPath;
 
 		if (!reader.exists(pathName))
 			return null;
-		
-		if (datasetExists(pathName)) {
 
-			if (key.equals("dimensions") && long[].class.isAssignableFrom(clazz)) {
+		final boolean isDataset = datasetExists(pathName);
+		if (isDataset) {
+
+			if (normalizedKey.equals("dimensions") && type.getTypeName().equals(long[].class.getTypeName())) {
 				final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
 				final long[] dimensions = datasetInfo.getDimensions();
 				reorder(dimensions);
 				return (T)dimensions;
 			}
-	
-			if (key.equals("blockSize") && int[].class.isAssignableFrom(clazz)) {
+
+			if (normalizedKey.equals("blockSize") && type.getTypeName().equals(int[].class.getTypeName())) {
 				final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
 				final long[] dimensions = datasetInfo.getDimensions();
 				int[] blockSize = overrideBlockSize ? null : datasetInfo.tryGetChunkSizes();
@@ -325,87 +326,157 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 				}
 				return (T)blockSize;
 			}
-	
-			if (key.equals("dataType") && DataType.class.isAssignableFrom(clazz)) {
-	
+
+			if (normalizedKey.equals("dataType") && type.getTypeName().equals(DataType.class.getTypeName())) {
+
 				final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
 				return (T)getDataType(datasetInfo);
 			}
-	
-			if (key.equals("compression") && Compression.class.isAssignableFrom(clazz))
+
+			if (normalizedKey.equals("compression") && type.getTypeName().equals(Compression.class.getTypeName()))
 				return (T)new RawCompression();
-			
+
 		}
 
-		if (!reader.object().hasAttribute(pathName, key)) {
+		if (!reader.object().hasAttribute(pathName, normalizedKey) || normalizedKey.equals(N5_JSON_ROOT_KEY)) {
 			/* Try to read the json if possible */
-			if (!reader.object().hasAttribute( pathName, N5_JSON_ROOT_KEY )) {
-				return null;
+			final boolean hasN5JsonRoot = reader.object().hasAttribute(pathName, N5_JSON_ROOT_KEY);
+			final JsonElement gsonAttribute;
+			if (!hasN5JsonRoot) {
+				if (!normalizedKey.equals("/")) {
+					return null;
+				}
+				gsonAttribute = null;
+			} else {
+				final String n5JsonRoot = reader.string().getAttr(pathName, N5_JSON_ROOT_KEY);
+				final JsonElement root = JsonParser.parseString(n5JsonRoot);
+				final String jsonKey = normalizedKey.equals(N5_JSON_ROOT_KEY) ? "/" : normalizedKey;
+				gsonAttribute = GsonN5Reader.getAttribute(root, jsonKey);
 			}
-			final JsonElement root = JsonParser.parseString(reader.string().getAttr( pathName, N5_JSON_ROOT_KEY ));
-			return GsonAttributesParser.readAttribute( root,  N5URL.normalizeAttributePath( key), clazz, gson);
+			final JsonElement attribute;
+			if (normalizedKey.equals("/")) {
+				final List<String> allAttributeNames = reader.object().getAllAttributeNames(pathName);
+				if (allAttributeNames.size() > 1 || gsonAttribute == null || isDataset) {
+					final JsonObject attributeObj;
+					if (gsonAttribute != null && gsonAttribute.isJsonObject()) {
+						attributeObj = gsonAttribute.getAsJsonObject();
+					} else {
+						attributeObj = new JsonObject();
+						//TODO: do we really want to return the root if it's not an object? it exposes the `N5_JSON_ROOT_KEY`
+						if (gsonAttribute != null)
+							attributeObj.add(N5_JSON_ROOT_KEY, gsonAttribute);
+					}
+					for (final String attr : allAttributeNames) {
+						if (attr.equals(N5_JSON_ROOT_KEY)) {
+							continue;
+						}
+						attributeObj.add(attr, gson.toJsonTree(getAttribute(pathName, attr, JsonElement.class)));
+					}
+					if (isDataset) {
+						final DatasetAttributes datasetAttributes = getDatasetAttributes(pathName);
+						attributeObj.add("dimensions", gson.toJsonTree(datasetAttributes.getDimensions()));
+						attributeObj.add("blockSize", gson.toJsonTree(datasetAttributes.getBlockSize()));
+						attributeObj.add("dataType", gson.toJsonTree(datasetAttributes.getDataType()));
+						attributeObj.add("compression",gson.toJsonTree(datasetAttributes.getCompression()));
+					}
+					attribute = attributeObj;
+				} else {
+					attribute = gsonAttribute;
+				}
+			} else {
+				attribute = gsonAttribute;
+			}
+			return GsonN5Reader.readAttribute(attribute, "", type, gson);
 		}
 
-		final HDF5DataTypeInformation attributeInfo = reader.object().getAttributeInformation(pathName, key);
-		final Class<?> type = attributeInfo.tryGetJavaType();
-		if (type.isAssignableFrom(long[].class))
+		final HDF5DataTypeInformation attributeInfo = reader.object().getAttributeInformation(pathName, normalizedKey);
+		final Class<?> clazz = attributeInfo.tryGetJavaType();
+		if (clazz.isAssignableFrom(long[].class))
 			if (attributeInfo.isSigned())
-				return (T)reader.int64().getArrayAttr(pathName, key);
+				return (T)reader.int64().getArrayAttr(pathName, normalizedKey);
 			else
-				return (T)reader.uint64().getArrayAttr(pathName, key);
-		if (type.isAssignableFrom(int[].class))
+				return (T)reader.uint64().getArrayAttr(pathName, normalizedKey);
+		if (clazz.isAssignableFrom(int[].class))
 			if (attributeInfo.isSigned())
-				return (T)reader.int32().getArrayAttr(pathName, key);
+				return (T)reader.int32().getArrayAttr(pathName, normalizedKey);
 			else
-				return (T)reader.uint32().getArrayAttr(pathName, key);
-		if (type.isAssignableFrom(short[].class))
+				return (T)reader.uint32().getArrayAttr(pathName, normalizedKey);
+		if (clazz.isAssignableFrom(short[].class))
 			if (attributeInfo.isSigned())
-				return (T)reader.int16().getArrayAttr(pathName, key);
+				return (T)reader.int16().getArrayAttr(pathName, normalizedKey);
 			else
-				return (T)reader.uint16().getArrayAttr(pathName, key);
-		if (type.isAssignableFrom(byte[].class)) {
+				return (T)reader.uint16().getArrayAttr(pathName, normalizedKey);
+		if (clazz.isAssignableFrom(byte[].class)) {
 			if (attributeInfo.isSigned())
-				return (T)reader.int8().getArrayAttr(pathName, key);
+				return (T)reader.int8().getArrayAttr(pathName, normalizedKey);
 			else
-				return (T)reader.uint8().getArrayAttr(pathName, key);
-		} else if (type.isAssignableFrom(double[].class))
-			return (T)reader.float64().getArrayAttr(pathName, key);
-		else if (type.isAssignableFrom(float[].class))
-			return (T)reader.float32().getArrayAttr(pathName, key);
-		else if (type.isAssignableFrom(String[].class))
-			return (T)reader.string().getArrayAttr(pathName, key);
-		if (type.isAssignableFrom(long.class)) {
+				return (T)reader.uint8().getArrayAttr(pathName, normalizedKey);
+		} else if (clazz.isAssignableFrom(double[].class))
+			return (T)reader.float64().getArrayAttr(pathName, normalizedKey);
+		else if (clazz.isAssignableFrom(float[].class))
+			return (T)reader.float32().getArrayAttr(pathName, normalizedKey);
+		else if (clazz.isAssignableFrom(String[].class))
+			return (T)reader.string().getArrayAttr(pathName, normalizedKey);
+		if (clazz.isAssignableFrom(long.class)) {
 			if (attributeInfo.isSigned())
-				return (T)new Long(reader.int64().getAttr(pathName, key));
+				return (T)new Long(reader.int64().getAttr(pathName, normalizedKey));
 			else
-				return (T)new Long(reader.uint64().getAttr(pathName, key));
-		} else if (type.isAssignableFrom(int.class)) {
+				return (T)new Long(reader.uint64().getAttr(pathName, normalizedKey));
+		} else if (clazz.isAssignableFrom(int.class)) {
 			if (attributeInfo.isSigned())
-				return (T)new Integer(reader.int32().getAttr(pathName, key));
+				return (T)new Integer(reader.int32().getAttr(pathName, normalizedKey));
 			else
-				return (T)new Integer(reader.uint32().getAttr(pathName, key));
-		} else if (type.isAssignableFrom(short.class)) {
+				return (T)new Integer(reader.uint32().getAttr(pathName, normalizedKey));
+		} else if (clazz.isAssignableFrom(short.class)) {
 			if (attributeInfo.isSigned())
-				return (T)new Short(reader.int16().getAttr(pathName, key));
+				return (T)new Short(reader.int16().getAttr(pathName, normalizedKey));
 			else
-				return (T)new Short(reader.uint16().getAttr(pathName, key));
-		} else if (type.isAssignableFrom(byte.class)) {
+				return (T)new Short(reader.uint16().getAttr(pathName, normalizedKey));
+		} else if (clazz.isAssignableFrom(byte.class)) {
 			if (attributeInfo.isSigned())
-				return (T)new Byte(reader.int8().getAttr(pathName, key));
+				return (T)new Byte(reader.int8().getAttr(pathName, normalizedKey));
 			else
-				return (T)new Byte(reader.uint8().getAttr(pathName, key));
-		} else if (type.isAssignableFrom(double.class))
-			return (T)new Double(reader.float64().getAttr(pathName, key));
-		else if (type.isAssignableFrom(float.class))
-			return (T)new Float(reader.float32().getAttr(pathName, key));
-		else if (type.isAssignableFrom(boolean.class))
-			return (T)Boolean.valueOf(reader.bool().getAttr(pathName, key));
-		else if (type.isAssignableFrom(String.class)) {
-			final String attributeString = reader.string().getAttr(pathName, key);
-			if (clazz.isAssignableFrom(String.class))
+				return (T)new Byte(reader.uint8().getAttr(pathName, normalizedKey));
+		} else if (clazz.isAssignableFrom(double.class))
+			return (T)new Double(reader.float64().getAttr(pathName, normalizedKey));
+		else if (clazz.isAssignableFrom(float.class))
+			return (T)new Float(reader.float32().getAttr(pathName, normalizedKey));
+		else if (clazz.isAssignableFrom(boolean.class))
+			return (T)Boolean.valueOf(reader.bool().getAttr(pathName, normalizedKey));
+		else if (clazz.isAssignableFrom(String.class)) {
+			final String attributeString = reader.string().getAttr(pathName, normalizedKey);
+			Class<T> typeClass = null;
+			try {
+				typeClass = (Class<T>) type;
+			} catch (ClassCastException e) {
+				typeClass = null;
+			}
+			if (typeClass == null) {
 				return (T)attributeString;
+			}
+			if (typeClass.isAssignableFrom(String.class)) {
+				// Here the assumption is made that if the `Gson` object is configured to serializeNulls, and the retrieved attribute is the String `"null"`
+				//	That it most likey was a quirk of a `null` value being serialized as the String `"null"`, and thus return `null`
+				if (gson.serializeNulls() && attributeString.equals("null")) {
+					return null;
+				}
+				return (T)attributeString;
+			}
+			else if (typeClass.isAssignableFrom(JsonElement.class)) {
+				//TODO: See if this can be done better:
+				//	If the `attributeString` is intended to be interpreted as a `String`, it needs to be wrapped with `"..."` quotes to make it a valid json string.
+				//	Unfortunately it's not easy to know if the value is a json string or json structure until attempting to parse it.
+				if (attributeString.isEmpty()) {
+					return gson.fromJson("\"" + attributeString+"\"", type);
+				}
+				try {
+					return gson.fromJson(attributeString, type);
+				} catch (JsonSyntaxException e) {
+					return gson.fromJson("\"" + attributeString+"\"", type);
+				}
+			}
 			else
-				return gson.fromJson(attributeString, clazz);
+				return gson.fromJson(attributeString, type);
 		}
 
 		System.err.println("Reading attributes of type " + attributeInfo + " not yet implemented.");
@@ -414,124 +485,8 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T> T getAttribute(String pathName, final String key, final Type type) throws IOException {
-
-		if (pathName.equals(""))
-			pathName = "/";
-
-		if (!reader.exists(pathName))
-			return null;
-
-		if (datasetExists(pathName)) {
-
-			if (key.equals("dimensions") && type.getTypeName().equals(long[].class.getTypeName())) {
-				final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
-				final long[] dimensions = datasetInfo.getDimensions();
-				reorder(dimensions);
-				return (T)dimensions;
-			}
-
-			if (key.equals("blockSize") && type.getTypeName().equals(int[].class.getTypeName())) {
-				final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
-				final long[] dimensions = datasetInfo.getDimensions();
-				int[] blockSize = overrideBlockSize ? null : datasetInfo.tryGetChunkSizes();
-				if (blockSize != null)
-					reorder(blockSize);
-				else {
-					blockSize = new int[dimensions.length];
-					for (int i = 0; i < blockSize.length; ++i) {
-						if (i >= defaultBlockSize.length || defaultBlockSize[i] <= 0)
-							blockSize[i] = (int)dimensions[i];
-						else
-							blockSize[i] = defaultBlockSize[i];
-					}
-				}
-				return (T)blockSize;
-			}
-
-			if (key.equals("dataType") && type.getTypeName().equals(DataType.class.getTypeName())) {
-
-				final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
-				return (T)getDataType(datasetInfo);
-			}
-
-			if (key.equals("compression") && type.getTypeName().equals(Compression.class.getTypeName()))
-				return (T)new RawCompression();
-		}
-
-		if (key.trim().isEmpty() || !reader.object().hasAttribute(pathName, key)) {
-			/* Try to read the json if possible */
-			if (!reader.object().hasAttribute( pathName, N5_JSON_ROOT_KEY )) {
-				return null;
-			}
-			final JsonElement root = JsonParser.parseString(reader.string().getAttr( pathName, N5_JSON_ROOT_KEY ));
-			return GsonAttributesParser.readAttribute( root,  N5URL.normalizeAttributePath( key), type, gson);
-		}
-
-		final HDF5DataTypeInformation attributeInfo = reader.object().getAttributeInformation(pathName, key);
-		final Class<?> clazz = attributeInfo.tryGetJavaType();
-		if (clazz.isAssignableFrom(long[].class))
-			if (attributeInfo.isSigned())
-				return (T)reader.int64().getArrayAttr(pathName, key);
-			else
-				return (T)reader.uint64().getArrayAttr(pathName, key);
-		if (clazz.isAssignableFrom(int[].class))
-			if (attributeInfo.isSigned())
-				return (T)reader.int32().getArrayAttr(pathName, key);
-			else
-				return (T)reader.uint32().getArrayAttr(pathName, key);
-		if (clazz.isAssignableFrom(short[].class))
-			if (attributeInfo.isSigned())
-				return (T)reader.int16().getArrayAttr(pathName, key);
-			else
-				return (T)reader.uint16().getArrayAttr(pathName, key);
-		if (clazz.isAssignableFrom(byte[].class)) {
-			if (attributeInfo.isSigned())
-				return (T)reader.int8().getArrayAttr(pathName, key);
-			else
-				return (T)reader.uint8().getArrayAttr(pathName, key);
-		} else if (clazz.isAssignableFrom(double[].class))
-			return (T)reader.float64().getArrayAttr(pathName, key);
-		else if (clazz.isAssignableFrom(float[].class))
-			return (T)reader.float32().getArrayAttr(pathName, key);
-		else if (clazz.isAssignableFrom(String[].class))
-			return (T)reader.string().getArrayAttr(pathName, key);
-		if (clazz.isAssignableFrom(long.class)) {
-			if (attributeInfo.isSigned())
-				return (T)new Long(reader.int64().getAttr(pathName, key));
-			else
-				return (T)new Long(reader.uint64().getAttr(pathName, key));
-		} else if (clazz.isAssignableFrom(int.class)) {
-			if (attributeInfo.isSigned())
-				return (T)new Integer(reader.int32().getAttr(pathName, key));
-			else
-				return (T)new Integer(reader.uint32().getAttr(pathName, key));
-		} else if (clazz.isAssignableFrom(short.class)) {
-			if (attributeInfo.isSigned())
-				return (T)new Short(reader.int16().getAttr(pathName, key));
-			else
-				return (T)new Short(reader.uint16().getAttr(pathName, key));
-		} else if (clazz.isAssignableFrom(byte.class)) {
-			if (attributeInfo.isSigned())
-				return (T)new Byte(reader.int8().getAttr(pathName, key));
-			else
-				return (T)new Byte(reader.uint8().getAttr(pathName, key));
-		} else if (clazz.isAssignableFrom(double.class))
-			return (T)new Double(reader.float64().getAttr(pathName, key));
-		else if (clazz.isAssignableFrom(float.class))
-			return (T)new Float(reader.float32().getAttr(pathName, key));
-		else if (clazz.isAssignableFrom(boolean.class))
-			return (T)Boolean.valueOf(reader.bool().getAttr(pathName, key));
-		else if (clazz.isAssignableFrom(String.class)) {
-			final String attributeString = reader.string().getAttr(pathName, key);
-			if (type.getTypeName().equals(String.class.getTypeName()))
-				return (T)attributeString;
-			else
-				return gson.fromJson(attributeString, type);
-		}
-
-		System.err.println("Reading attributes of type " + attributeInfo + " not yet implemented.");
-		return null;
+	public <T> T getAttribute(String pathName, final String key, final Class<T> clazz) throws IOException {
+		return getAttribute(pathName, key, TypeToken.get(clazz).getType());
 	}
 
 	/**
@@ -547,66 +502,16 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 	 * @param pathName the group or dataset path
 	 * @return the attribute map
 	 */
-	@Override
-	public HashMap<String, JsonElement> getAttributes(final String pathName) throws IOException {
+	@Deprecated
+	public HashMap<String, JsonElement> getAttributesMap(String pathName) throws IOException {
 
-		final HashMap<String, JsonElement> attrs = new HashMap<>();
-		final Map<String, Class<?>> attrClasses = listAttributes(pathName);
-		for (final String k : attrClasses.keySet()) {
-			if (
-					attrClasses.get(k).equals(Object.class) ||
-					attrClasses.get(k).equals(Object[].class)
-			) {
-				final String s = getAttribute(pathName, k, String.class);
-
-				if (s.isEmpty()) {
-					// check for empty string explicitly because it parses
-					// as a null JsonObject without throwing an exception
-					attrs.put(k, gson.toJsonTree(s));
-				} else {
-					JsonElement elem;
-					try {
-						elem = gson.fromJson(s, JsonObject.class);
-					} catch (final JsonSyntaxException e) {
-						elem = gson.toJsonTree(s);
-					}
-					/* if the root attr, add all it's top-level object names instead */
-					if (k.equals(N5_JSON_ROOT_KEY) && elem.isJsonObject()) {
-						elem.getAsJsonObject().entrySet().forEach((entry) -> attrs.put(entry.getKey(), entry.getValue()));
-						continue;
-					}
-					attrs.put(k, elem);
-				}
-
-			} else
-				attrs.put(k, gson.toJsonTree(getAttribute(pathName, k, attrClasses.get(k))));
-		}
-
-		if (datasetExists(pathName)) {
-			final DatasetAttributes datasetAttributes = getDatasetAttributes(pathName);
-			attrs.put("dimensions", gson.toJsonTree(datasetAttributes.getDimensions()));
-			attrs.put("blockSize", gson.toJsonTree(datasetAttributes.getBlockSize()));
-			attrs.put("dataType", gson.toJsonTree(datasetAttributes.getDataType() ));
-			final JsonObject fakeRawCompression = new JsonObject();
-			fakeRawCompression.addProperty("type", "raw");
-			attrs.put("compression", fakeRawCompression);
-		}
-
-		return attrs;
+		return GsonAttributesParser.super.getAttributesMap(getAttributes(pathName));
 	}
 
 	@Override
-	public JsonElement getAttributesJson( final String pathName ) throws IOException
-	{
-		final HashMap< String, JsonElement > attributesMap = getAttributes( pathName );
-		final JsonObject attributes = new JsonObject();
-		for ( final Map.Entry< String, JsonElement > keyAttribute: attributesMap.entrySet() )
-		{
-			final String key = keyAttribute.getKey();
-			final JsonElement attribute = keyAttribute.getValue();
-			attributes.add( key, attribute );
-		}
-		return attributes;
+	public JsonElement getAttributes(final String pathName) throws IOException {
+
+		return getAttribute(pathName, "/", JsonElement.class);
 	}
 
 	protected static DataType getDataType(final HDF5DataSetInformation datasetInfo) {
@@ -694,17 +599,17 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 	/**
 	 * Always returns {@link CompressionType}#RAW because I could not yet find a
 	 * meaningful way to get information about the compression of a dataset.
-     *
-     * @param pathName the group or dataset path
-     * @return the DatasetAttributes
+	 *
+	 * @param pathName the group or dataset path
+	 * @return the DatasetAttributes
 	 */
 	@Override
 	public DatasetAttributes getDatasetAttributes(String pathName) {
 
-		if (pathName.equals(""))
-			pathName = "/";
-		
-		if(!datasetExists(pathName))
+		final String normalizedPathName = N5URL.normalizePath(pathName);
+		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
+
+		if (!datasetExists(pathName))
 			return null;
 
 		final HDF5DataSetInformation datasetInfo = reader.object().getDataSetInformation(pathName);
@@ -737,8 +642,8 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 			final DatasetAttributes datasetAttributes,
 			final long... gridPosition) throws IOException {
 
-		if (pathName.equals(""))
-			pathName = "/";
+		final String normalizedPathName = N5URL.normalizePath(pathName);
+		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
 
 		final long[] hdf5Dimensions = datasetAttributes.getDimensions().clone();
 		reorder(hdf5Dimensions);
@@ -830,8 +735,8 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 	@Override
 	public boolean datasetExists(String pathName) {
 
-		if (pathName.equals(""))
-			pathName = "/";
+		final String normalizedPathName = N5URL.normalizePath(pathName);
+		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
 
 		return reader.exists(pathName) && reader.object().isDataSet(pathName);
 	}
@@ -845,20 +750,21 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 	@Override
 	public Map<String, Class<?>> listAttributes(final String pathName) throws IOException {
 
-		final String finalPathName = pathName.equals("") ? "/" : pathName;
+		final String normalizedPathName = N5URL.normalizePath(pathName);
+		final String finalPathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
 
 		final HashMap<String, Class<?>> attributes = new HashMap<>();
-		
+
 		reader
 				.object()
 				.getAttributeNames(finalPathName)
 				.forEach(
 						attributeName -> {
 							Class<?> clazz = reader
-								.object()
-								.getAttributeInformation(finalPathName, attributeName)
-								.tryGetJavaType();
-							if(clazz.isAssignableFrom(String.class)) {
+									.object()
+									.getAttributeInformation(finalPathName, attributeName)
+									.tryGetJavaType();
+							if (clazz.isAssignableFrom(String.class)) {
 								//Attempt to parse the JSON
 								try {
 									String value = reader.string().getAttr(finalPathName, attributeName);
@@ -868,10 +774,9 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 										for (final Map.Entry<String, JsonElement> entry : element.getAsJsonObject().entrySet()) {
 											final JsonElement rootElement = entry.getValue();
 											final Class<?> rootClass;
-											if(rootElement.isJsonArray()) {
+											if (rootElement.isJsonArray()) {
 												rootClass = Object[].class;
-											}
-											else if(!rootElement.isJsonPrimitive()) {
+											} else if (!rootElement.isJsonPrimitive()) {
 												rootClass = Object.class;
 											} else {
 												rootClass = GsonAttributesParser.classForJsonPrimitive(rootElement.getAsJsonPrimitive());
@@ -879,22 +784,22 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 											attributes.put(entry.getKey(), rootClass);
 										}
 									} else {
-										if(element.isJsonArray())
+										if (element.isJsonArray())
 											clazz = Object[].class;
-										else if(!element.isJsonPrimitive())
+										else if (!element.isJsonPrimitive())
 											clazz = Object.class;
 									}
 
 									//A plain String is a JSON primitive
-								} catch(JsonSyntaxException e) {
+								} catch (JsonSyntaxException e) {
 									//parsing fail, assume String.class
 								}
 							}
 							attributes
-								.put(
-										attributeName,
-										clazz
-								);
+									.put(
+											attributeName,
+											clazz
+									);
 						}
 				);
 		return attributes;
