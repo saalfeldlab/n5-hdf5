@@ -40,6 +40,7 @@ import org.janelia.saalfeldlab.n5.RawCompression;
 
 import com.google.gson.GsonBuilder;
 
+import ch.systemsx.cisd.base.mdarray.MDArray;
 import ch.systemsx.cisd.base.mdarray.MDByteArray;
 import ch.systemsx.cisd.base.mdarray.MDDoubleArray;
 import ch.systemsx.cisd.base.mdarray.MDFloatArray;
@@ -48,6 +49,7 @@ import ch.systemsx.cisd.base.mdarray.MDLongArray;
 import ch.systemsx.cisd.base.mdarray.MDShortArray;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.HDF5FloatStorageFeatures;
+import ch.systemsx.cisd.hdf5.HDF5GenericStorageFeatures;
 import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;
 import ch.systemsx.cisd.hdf5.IHDF5Writer;
 
@@ -212,14 +214,17 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 		final HDF5IntStorageFeatures intCompression;
 		final HDF5IntStorageFeatures uintCompression;
 		final HDF5FloatStorageFeatures floatCompression;
+		final HDF5GenericStorageFeatures stringCompression;
 		if (compression instanceof RawCompression) {
 			floatCompression = HDF5FloatStorageFeatures.FLOAT_NO_COMPRESSION;
 			intCompression = HDF5IntStorageFeatures.INT_NO_COMPRESSION;
 			uintCompression = HDF5IntStorageFeatures.INT_NO_COMPRESSION_UNSIGNED;
+			stringCompression = HDF5GenericStorageFeatures.GENERIC_NO_COMPRESSION;
 		} else {
 			floatCompression = HDF5FloatStorageFeatures.FLOAT_SHUFFLE_DEFLATE;
 			intCompression = HDF5IntStorageFeatures.INT_AUTO_SCALING_DEFLATE;
 			uintCompression = HDF5IntStorageFeatures.INT_AUTO_SCALING_DEFLATE_UNSIGNED;
+			stringCompression = HDF5GenericStorageFeatures.GENERIC_DEFLATE;
 		}
 
 		if (writer.exists(pathName))
@@ -260,6 +265,9 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 			break;
 		case FLOAT64:
 			writer.float64().createMDArray(pathName, hdf5Dimensions, hdf5BlockSize, floatCompression);
+			break;
+		case VLENSTRING:
+			writer.string().createMDArrayVL(pathName, hdf5Dimensions, hdf5BlockSize, stringCompression);
 		default:
 			return;
 		}
@@ -399,6 +407,10 @@ public class N5HDF5Writer extends N5HDF5Reader implements N5Writer {
 		case FLOAT64:
 			final MDDoubleArray float64TargetCell = new MDDoubleArray((double[])dataBlock.getData(), hdf5DataBlockSize);
 			writer.float64().writeMDArrayBlockWithOffset(pathName, float64TargetCell, hdf5Offset);
+			break;
+		case VLENSTRING:
+			final MDArray<String> vlenStringTargetCell = new MDArray<>((String[])dataBlock.getData(), hdf5DataBlockSize);
+			writer.string().writeMDArrayBlockWithOffset(pathName, vlenStringTargetCell, hdf5Offset);
 			break;
 		default:
 			throw new UnsupportedOperationException(datasetAttributes.getDataType() + " datatype not currently supported.");

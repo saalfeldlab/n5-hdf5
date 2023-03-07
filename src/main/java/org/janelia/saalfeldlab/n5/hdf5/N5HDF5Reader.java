@@ -48,6 +48,7 @@ import org.janelia.saalfeldlab.n5.LongArrayDataBlock;
 import org.janelia.saalfeldlab.n5.N5Reader;
 import org.janelia.saalfeldlab.n5.RawCompression;
 import org.janelia.saalfeldlab.n5.ShortArrayDataBlock;
+import org.janelia.saalfeldlab.n5.VLenStringDataBlock;
 import org.scijava.util.VersionUtils;
 
 import com.google.gson.Gson;
@@ -57,6 +58,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
+import ch.systemsx.cisd.base.mdarray.MDArray;
 import ch.systemsx.cisd.base.mdarray.MDByteArray;
 import ch.systemsx.cisd.base.mdarray.MDDoubleArray;
 import ch.systemsx.cisd.base.mdarray.MDFloatArray;
@@ -595,6 +597,8 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 			return DataType.FLOAT64;
 		else if (type.isAssignableFrom(float.class))
 			return DataType.FLOAT32;
+		else if (type.isAssignableFrom(String.class))
+			return DataType.VLENSTRING;
 
 		System.err.println("Datasets of type " + typeInfo + " not yet implemented.");
 		return null;
@@ -777,6 +781,12 @@ public class N5HDF5Reader implements N5Reader, GsonAttributesParser, Closeable {
 					.float64()
 					.readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
 			dataBlock = new DoubleArrayDataBlock(croppedBlockSize, gridPosition, float64Array.getAsFlatArray());
+			break;
+		case VLENSTRING:
+			final MDArray<String> vlenStringArray = reader
+					.string()
+					.readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
+			dataBlock = new VLenStringDataBlock(croppedBlockSize, gridPosition, vlenStringArray.getAsFlatArray());
 			break;
 		default:
 			dataBlock = null;
