@@ -39,7 +39,6 @@ import org.janelia.saalfeldlab.n5.Compression;
 import org.janelia.saalfeldlab.n5.DataBlock;
 import org.janelia.saalfeldlab.n5.DataType;
 import org.janelia.saalfeldlab.n5.DatasetAttributes;
-import org.janelia.saalfeldlab.n5.GsonAttributesParser;
 import org.janelia.saalfeldlab.n5.GsonN5Writer;
 import org.janelia.saalfeldlab.n5.N5URL;
 import org.janelia.saalfeldlab.n5.N5Writer;
@@ -297,17 +296,27 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 		if (!datasetExists(finalPathName))
 			createGroup(finalPathName);
 
+
 		/* Any key that looks like an attribute path is treated as one;
 		 *	The only exception are top level elements with a single leading `/` */
 		final String normalizedAttrPath = N5URL.normalizeAttributePath(key);
 		final String normalizedKey = normalizedAttrPath.isEmpty() ? "/" : normalizedAttrPath;
+
+		if (writer.object().hasAttribute(finalPathName, normalizedKey)) {
+			writer.object().deleteAttribute(finalPathName, normalizedKey);
+		}
+
 		final boolean isRoot = normalizedKey.equals("/");
 		/* If setting the root attribute, we need to remove all existing attributes */
 		if (isRoot) {
 			writer.object().getAllAttributeNames(finalPathName).forEach(it -> writer.object().deleteAttribute(finalPathName, it));
 		}
 		final String[] attributePathTokens = normalizedKey.split("/");
-		final boolean isPath = attributePathTokens.length > 2 || attributePathTokens.length > 1 && attributePathTokens[0].length() > 0;
+		final boolean isPath =
+				attributePathTokens.length > 2
+						|| attributePathTokens.length > 1 && attributePathTokens[0].length() > 0
+						|| N5URL.ARRAY_INDEX.asPredicate().test(normalizedKey)
+						|| containsEscapeCharacters(normalizedKey);
 		if (isRoot || isPath ) {
 			writeAttributeAsJson(finalPathName, normalizedKey, attribute);
 			return;
@@ -369,7 +378,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 		}
 
 		//TODO How to handle writing top-level keys that have existing native keys (such as datasetAtributes)
-		root = GsonAttributesParser.insertAttribute(root, N5URL.normalizeAttributePath(key), attribute, gson );
+		root = GsonN5Writer.insertAttribute(root, N5URL.normalizeAttributePath(key), attribute, gson );
 		writer.string().setAttr(pathName, N5_JSON_ROOT_KEY, gson.toJson(root));
 	}
 

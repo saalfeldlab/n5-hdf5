@@ -35,6 +35,7 @@ import java.util.concurrent.Executors;
 import java.util.function.Predicate;
 
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 import org.janelia.saalfeldlab.n5.AbstractN5Test;
 import org.janelia.saalfeldlab.n5.ByteArrayDataBlock;
 import org.janelia.saalfeldlab.n5.Compression;
@@ -365,18 +366,20 @@ public class N5HDF5Test extends AbstractN5Test {
 			writer.setAttribute("/attributeTest", "darray", darray);
 			writer.setAttribute("/attributeTest", "iarray", iarray);
 
-			HashMap<String, JsonElement> attrs = h5.getAttributesMap("/attributeTest");
-			assertTrue("has object attribute", attrs.containsKey("myAttribute"));
-			assertTrue("has string attribute", attrs.containsKey("string"));
-			assertTrue("has empty string attribute", attrs.containsKey("emptyString"));
-			assertTrue("has d-array attribute", attrs.containsKey("darray"));
-			assertTrue("has i-array attribute", attrs.containsKey("iarray"));
+			JsonElement attrs = h5.getAttributes("/attributeTest");
+			assertTrue(attrs.isJsonObject());
+			final JsonObject attrsObj = attrs.getAsJsonObject();
+			assertTrue("has object attribute", attrsObj.has("myAttribute"));
+			assertTrue("has string attribute", attrsObj.has("string"));
+			assertTrue("has empty string attribute", attrsObj.has("emptyString"));
+			assertTrue("has d-array attribute", attrsObj.has("darray"));
+			assertTrue("has i-array attribute", attrsObj.has("iarray"));
 
-			assertEquals("object elem", oElem, attrs.get("myAttribute"));
-			assertEquals("string elem", sElem, attrs.get("string"));
-			assertEquals("empty string elem", esElem, attrs.get("emptyString"));
-			assertEquals("double array elem", dElem, attrs.get("darray"));
-			assertEquals("int array elem", iElem, attrs.get("iarray"));
+			assertEquals("object elem", oElem, attrsObj.get("myAttribute"));
+			assertEquals("string elem", sElem, attrsObj.get("string"));
+			assertEquals("empty string elem", esElem, attrsObj.get("emptyString"));
+			assertEquals("double array elem", dElem, attrsObj.get("darray"));
+			assertEquals("int array elem", iElem, attrsObj.get("iarray"));
 
 			writer.remove("/attributeTest");
 
@@ -386,16 +389,18 @@ public class N5HDF5Test extends AbstractN5Test {
 			RawCompression compression = new RawCompression();
 
 			writer.createDataset("/datasetTest", dims, blkSz, DataType.UINT8, compression);
-			HashMap<String, JsonElement> dsetAttrs = h5.getAttributesMap("/datasetTest");
-			assertTrue("dset has dimensions", dsetAttrs.containsKey("dimensions"));
-			assertTrue("dset has blockSize", dsetAttrs.containsKey("blockSize"));
-			assertTrue("dset has dataType", dsetAttrs.containsKey("dataType"));
-			assertTrue("dset has compression", dsetAttrs.containsKey("compression"));
+			JsonElement dsetAttrs = h5.getAttributes("/datasetTest");
+			assertTrue(dsetAttrs.isJsonObject());
+			final JsonObject dsetAttrsObj = dsetAttrs.getAsJsonObject();
+			assertTrue("dset has dimensions", dsetAttrsObj.has("dimensions"));
+			assertTrue("dset has blockSize", dsetAttrsObj.has("blockSize"));
+			assertTrue("dset has dataType", dsetAttrsObj.has("dataType"));
+			assertTrue("dset has compression", dsetAttrsObj.has("compression"));
 
 			final Gson gson = h5.getGson();
-			assertArrayEquals("dset dimensions", dims, gson.fromJson(dsetAttrs.get("dimensions"), long[].class));
-			assertArrayEquals("dset blockSize", blkSz, gson.fromJson(dsetAttrs.get("blockSize"), int[].class));
-			assertEquals("dset dataType", DataType.UINT8, gson.fromJson(dsetAttrs.get("dataType"), DataType.class));
+			assertArrayEquals("dset dimensions", dims, gson.fromJson(dsetAttrsObj.get("dimensions"), long[].class));
+			assertArrayEquals("dset blockSize", blkSz, gson.fromJson(dsetAttrsObj.get("blockSize"), int[].class));
+			assertEquals("dset dataType", DataType.UINT8, gson.fromJson(dsetAttrsObj.get("dataType"), DataType.class));
 
 			writer.remove("/datasetTest");
 		}

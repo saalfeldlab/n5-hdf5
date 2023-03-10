@@ -71,7 +71,7 @@ import java.util.Map;
 
 /**
  * Best effort {@link N5Reader} implementation for HDF5 files.
- *
+ * <p>
  * Attributes are not generally read as JSON but use HDF5 types. That means
  * that HDF5 files that were not generated with this library can be used
  * properly and correctly. Structured attributes for which no appropriate
@@ -80,7 +80,7 @@ import java.util.Map;
  * @author Stephan Saalfeld
  * @author Philipp Hanslovsky
  */
-public class N5HDF5Reader implements GsonN5Reader, GsonAttributesParser, Closeable {
+public class N5HDF5Reader implements GsonN5Reader, Closeable {
 
 	protected final Gson gson;
 
@@ -105,20 +105,15 @@ public class N5HDF5Reader implements GsonN5Reader, GsonAttributesParser, Closeab
 	/**
 	 * Opens an {@link N5HDF5Reader} for a given HDF5 file.
 	 *
-	 * @param reader
-	 *            HDF5 reader
-	 * @param overrideBlockSize
-	 *            true if you want this {@link N5HDF5Reader} to use the
-	 *            defaultBlockSize instead of the chunk-size for reading
-	 *            datasets
-	 * @param gsonBuilder
-	 *            custom {@link GsonBuilder} to support custom attributes
-	 * @param defaultBlockSize
-	 *            for all dimensions &gt; defaultBlockSize.length, and for all
-	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
-	 *            dataset will be used
-	 * @throws IOException
-	 *            the exception
+	 * @param reader            HDF5 reader
+	 * @param overrideBlockSize true if you want this {@link N5HDF5Reader} to use the
+	 *                          defaultBlockSize instead of the chunk-size for reading
+	 *                          datasets
+	 * @param gsonBuilder       custom {@link GsonBuilder} to support custom attributes
+	 * @param defaultBlockSize  for all dimensions &gt; defaultBlockSize.length, and for all
+	 *                          dimensions with defaultBlockSize[i] &lt;= 0, the size of the
+	 *                          dataset will be used
+	 * @throws IOException the exception
 	 */
 	public N5HDF5Reader(
 			final IHDF5Reader reader,
@@ -147,18 +142,14 @@ public class N5HDF5Reader implements GsonN5Reader, GsonAttributesParser, Closeab
 	/**
 	 * Opens an {@link N5HDF5Reader} for a given HDF5 file.
 	 *
-	 * @param reader
-	 *            HDF5 reader
-	 * @param overrideBlockSize
-	 *            true if you want this {@link N5HDF5Reader} to use the
-	 *            defaultBlockSize instead of the chunk-size for reading
-	 *            datasets
-	 * @param defaultBlockSize
-	 *            for all dimensions &gt; defaultBlockSize.length, and for all
-	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
-	 *            dataset will be used
-	 * @throws IOException
-	 *            the exception
+	 * @param reader            HDF5 reader
+	 * @param overrideBlockSize true if you want this {@link N5HDF5Reader} to use the
+	 *                          defaultBlockSize instead of the chunk-size for reading
+	 *                          datasets
+	 * @param defaultBlockSize  for all dimensions &gt; defaultBlockSize.length, and for all
+	 *                          dimensions with defaultBlockSize[i] &lt;= 0, the size of the
+	 *                          dataset will be used
+	 * @throws IOException the exception
 	 */
 	public N5HDF5Reader(
 			final IHDF5Reader reader,
@@ -171,14 +162,11 @@ public class N5HDF5Reader implements GsonN5Reader, GsonAttributesParser, Closeab
 	/**
 	 * Opens an {@link N5HDF5Reader} for a given HDF5 file.
 	 *
-	 * @param reader
-	 *            HDF5 reader
-	 * @param defaultBlockSize
-	 *            for all dimensions &gt; defaultBlockSize.length, and for all
-	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
-	 *            dataset will be used
-	 * @throws IOException
-	 *            the exception
+	 * @param reader           HDF5 reader
+	 * @param defaultBlockSize for all dimensions &gt; defaultBlockSize.length, and for all
+	 *                         dimensions with defaultBlockSize[i] &lt;= 0, the size of the
+	 *                         dataset will be used
+	 * @throws IOException the exception
 	 */
 	public N5HDF5Reader(
 			final IHDF5Reader reader,
@@ -190,20 +178,15 @@ public class N5HDF5Reader implements GsonN5Reader, GsonAttributesParser, Closeab
 	/**
 	 * Opens an {@link N5HDF5Reader} for a given HDF5 file.
 	 *
-	 * @param hdf5Path
-	 *            HDF5 file name
-	 * @param overrideBlockSize
-	 *            true if you want this {@link N5HDF5Reader} to use the
-	 *            defaultBlockSize instead of the chunk-size for reading
-	 *            datasets
-	 * @param gsonBuilder
-	 *            custom {@link GsonBuilder} to support custom attributes
-	 * @param defaultBlockSize
-	 *            for all dimensions &gt; defaultBlockSize.length, and for all
-	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
-	 *            dataset will be used
-	 * @throws IOException
-	 *            the exception
+	 * @param hdf5Path          HDF5 file name
+	 * @param overrideBlockSize true if you want this {@link N5HDF5Reader} to use the
+	 *                          defaultBlockSize instead of the chunk-size for reading
+	 *                          datasets
+	 * @param gsonBuilder       custom {@link GsonBuilder} to support custom attributes
+	 * @param defaultBlockSize  for all dimensions &gt; defaultBlockSize.length, and for all
+	 *                          dimensions with defaultBlockSize[i] &lt;= 0, the size of the
+	 *                          dataset will be used
+	 * @throws IOException the exception
 	 */
 	public N5HDF5Reader(
 			final String hdf5Path,
@@ -217,18 +200,14 @@ public class N5HDF5Reader implements GsonN5Reader, GsonAttributesParser, Closeab
 	/**
 	 * Opens an {@link N5HDF5Reader} for a given HDF5 file.
 	 *
-	 * @param hdf5Path
-	 *            HDF5 file name
-	 * @param overrideBlockSize
-	 *            true if you want this {@link N5HDF5Reader} to use the
-	 *            defaultBlockSize instead of the chunk-size for reading
-	 *            datasets
-	 * @param defaultBlockSize
-	 *            for all dimensions &gt; defaultBlockSize.length, and for all
-	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
-	 *            dataset will be used
-	 * @throws IOException
-	 *            the exception
+	 * @param hdf5Path          HDF5 file name
+	 * @param overrideBlockSize true if you want this {@link N5HDF5Reader} to use the
+	 *                          defaultBlockSize instead of the chunk-size for reading
+	 *                          datasets
+	 * @param defaultBlockSize  for all dimensions &gt; defaultBlockSize.length, and for all
+	 *                          dimensions with defaultBlockSize[i] &lt;= 0, the size of the
+	 *                          dataset will be used
+	 * @throws IOException the exception
 	 */
 	public N5HDF5Reader(
 			final String hdf5Path,
@@ -241,14 +220,11 @@ public class N5HDF5Reader implements GsonN5Reader, GsonAttributesParser, Closeab
 	/**
 	 * Opens an {@link N5HDF5Reader} for a given HDF5 file.
 	 *
-	 * @param hdf5Path
-	 *            HDF5 file name
-	 * @param defaultBlockSize
-	 *            for all dimensions &gt; defaultBlockSize.length, and for all
-	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
-	 *            dataset will be used
-	 * @throws IOException
-	 *            the exception
+	 * @param hdf5Path         HDF5 file name
+	 * @param defaultBlockSize for all dimensions &gt; defaultBlockSize.length, and for all
+	 *                         dimensions with defaultBlockSize[i] &lt;= 0, the size of the
+	 *                         dataset will be used
+	 * @throws IOException the exception
 	 */
 	public N5HDF5Reader(
 			final String hdf5Path,
@@ -284,6 +260,11 @@ public class N5HDF5Reader implements GsonN5Reader, GsonAttributesParser, Closeab
 		} catch (final Exception e) {
 			throw new IOException(e);
 		}
+	}
+
+	protected static boolean containsEscapeCharacters(String normalizedKey) {
+
+		return normalizedKey.matches(".*(\\\\/|\\\\\\[).*");
 	}
 
 	@SuppressWarnings("unchecked")
@@ -377,7 +358,7 @@ public class N5HDF5Reader implements GsonN5Reader, GsonAttributesParser, Closeab
 						attributeObj.add("dimensions", gson.toJsonTree(datasetAttributes.getDimensions()));
 						attributeObj.add("blockSize", gson.toJsonTree(datasetAttributes.getBlockSize()));
 						attributeObj.add("dataType", gson.toJsonTree(datasetAttributes.getDataType()));
-						attributeObj.add("compression",gson.toJsonTree(datasetAttributes.getCompression()));
+						attributeObj.add("compression", gson.toJsonTree(datasetAttributes.getCompression()));
 					}
 					attribute = attributeObj;
 				} else {
@@ -447,7 +428,7 @@ public class N5HDF5Reader implements GsonN5Reader, GsonAttributesParser, Closeab
 			final String attributeString = reader.string().getAttr(pathName, normalizedKey);
 			Class<T> typeClass = null;
 			try {
-				typeClass = (Class<T>) type;
+				typeClass = (Class<T>)type;
 			} catch (ClassCastException e) {
 				typeClass = null;
 			}
@@ -461,21 +442,19 @@ public class N5HDF5Reader implements GsonN5Reader, GsonAttributesParser, Closeab
 					return null;
 				}
 				return (T)attributeString;
-			}
-			else if (typeClass.isAssignableFrom(JsonElement.class)) {
+			} else if (typeClass.isAssignableFrom(JsonElement.class)) {
 				//TODO: See if this can be done better:
 				//	If the `attributeString` is intended to be interpreted as a `String`, it needs to be wrapped with `"..."` quotes to make it a valid json string.
 				//	Unfortunately it's not easy to know if the value is a json string or json structure until attempting to parse it.
 				if (attributeString.isEmpty()) {
-					return gson.fromJson("\"" + attributeString+"\"", type);
+					return gson.fromJson("\"" + attributeString + "\"", type);
 				}
 				try {
 					return gson.fromJson(attributeString, type);
 				} catch (JsonSyntaxException e) {
-					return gson.fromJson("\"" + attributeString+"\"", type);
+					return gson.fromJson("\"" + attributeString + "\"", type);
 				}
-			}
-			else
+			} else
 				return gson.fromJson(attributeString, type);
 		}
 
@@ -486,26 +465,8 @@ public class N5HDF5Reader implements GsonN5Reader, GsonAttributesParser, Closeab
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T getAttribute(String pathName, final String key, final Class<T> clazz) throws IOException {
+
 		return getAttribute(pathName, key, TypeToken.get(clazz).getType());
-	}
-
-	/**
-	 * Returns the attribute map for a group or dataset as {@link JsonElement}s.
-	 * <p>
-	 * String attributes are parsed as {@link JsonObject}s when they are valid json
-	 * so that they may be converted to arbitrary objects. This means that strings
-	 * that are valid json may not be recoverable from this method, use getAttribute
-	 * instead.
-	 * <p>
-	 * Potential future work may instead store objects as a compound type rather than as strings.
-	 *
-	 * @param pathName the group or dataset path
-	 * @return the attribute map
-	 */
-	@Deprecated
-	public HashMap<String, JsonElement> getAttributesMap(String pathName) throws IOException {
-
-		return GsonAttributesParser.super.getAttributesMap(getAttributes(pathName));
 	}
 
 	@Override
@@ -577,11 +538,11 @@ public class N5HDF5Reader implements GsonN5Reader, GsonAttributesParser, Closeab
 	 * block size. Also calculates the grid raster position assuming that the
 	 * offset is divisible by block size without remainder.
 	 *
-	 * @param gridPosition the coordinate of the block
-	 * @param dimensions the dataset dimensions
-	 * @param blockSize the block size
+	 * @param gridPosition     the coordinate of the block
+	 * @param dimensions       the dataset dimensions
+	 * @param blockSize        the block size
 	 * @param croppedBlockSize the cropped block size to be filled
-	 * @param offset the offset to be filled
+	 * @param offset           the offset to be filled
 	 */
 	protected static void cropBlockSize(
 			final long[] gridPosition,
@@ -764,12 +725,13 @@ public class N5HDF5Reader implements GsonN5Reader, GsonAttributesParser, Closeab
 									.object()
 									.getAttributeInformation(finalPathName, attributeName)
 									.tryGetJavaType();
+							final boolean isN5JsonRoot = attributeName.equals(N5_JSON_ROOT_KEY);
 							if (clazz.isAssignableFrom(String.class)) {
 								//Attempt to parse the JSON
 								try {
 									String value = reader.string().getAttr(finalPathName, attributeName);
 									JsonElement element = JsonParser.parseString(value);
-									if (attributeName.equals(N5_JSON_ROOT_KEY) && element.isJsonObject()) {
+									if (isN5JsonRoot && element.isJsonObject()) {
 										/* Add the top level elements */
 										for (final Map.Entry<String, JsonElement> entry : element.getAsJsonObject().entrySet()) {
 											final JsonElement rootElement = entry.getValue();
@@ -795,11 +757,9 @@ public class N5HDF5Reader implements GsonN5Reader, GsonAttributesParser, Closeab
 									//parsing fail, assume String.class
 								}
 							}
-							attributes
-									.put(
-											attributeName,
-											clazz
-									);
+							if (!isN5JsonRoot) {
+								attributes.put(attributeName, clazz);
+							}
 						}
 				);
 		return attributes;
@@ -812,7 +772,6 @@ public class N5HDF5Reader implements GsonN5Reader, GsonAttributesParser, Closeab
 	}
 
 	/**
-	 *
 	 * @return file name of HDF5 file this reader is associated with
 	 */
 	public File getFilename() {
@@ -821,7 +780,6 @@ public class N5HDF5Reader implements GsonN5Reader, GsonAttributesParser, Closeab
 	}
 
 	/**
-	 *
 	 * @return a copy of the default block size of this reader
 	 */
 	public int[] getDefaultBlockSizeCopy() {
@@ -830,9 +788,8 @@ public class N5HDF5Reader implements GsonN5Reader, GsonAttributesParser, Closeab
 	}
 
 	/**
-	 *
 	 * @return {@code true} if this reader overrides block size found in an
-	 *         HDF5 dataset, {@code false} otherwise
+	 * HDF5 dataset, {@code false} otherwise
 	 */
 	public boolean doesOverrideBlockSize() {
 
