@@ -25,12 +25,6 @@
  */
 package org.janelia.saalfeldlab.n5.hdf5;
 
-import ch.systemsx.cisd.base.mdarray.MDByteArray;
-import ch.systemsx.cisd.base.mdarray.MDDoubleArray;
-import ch.systemsx.cisd.base.mdarray.MDFloatArray;
-import ch.systemsx.cisd.base.mdarray.MDIntArray;
-import ch.systemsx.cisd.base.mdarray.MDLongArray;
-import ch.systemsx.cisd.base.mdarray.MDShortArray;
 import ch.systemsx.cisd.hdf5.HDF5DataSetInformation;
 import ch.systemsx.cisd.hdf5.HDF5DataTypeInformation;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
@@ -42,23 +36,19 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
-import org.janelia.saalfeldlab.n5.ByteArrayDataBlock;
 import org.janelia.saalfeldlab.n5.Compression;
 import org.janelia.saalfeldlab.n5.Compression.CompressionType;
 import org.janelia.saalfeldlab.n5.CompressionAdapter;
 import org.janelia.saalfeldlab.n5.DataBlock;
 import org.janelia.saalfeldlab.n5.DataType;
 import org.janelia.saalfeldlab.n5.DatasetAttributes;
-import org.janelia.saalfeldlab.n5.DoubleArrayDataBlock;
-import org.janelia.saalfeldlab.n5.FloatArrayDataBlock;
 import org.janelia.saalfeldlab.n5.GsonAttributesParser;
 import org.janelia.saalfeldlab.n5.GsonN5Reader;
-import org.janelia.saalfeldlab.n5.IntArrayDataBlock;
-import org.janelia.saalfeldlab.n5.LongArrayDataBlock;
 import org.janelia.saalfeldlab.n5.N5Reader;
 import org.janelia.saalfeldlab.n5.N5URL;
 import org.janelia.saalfeldlab.n5.RawCompression;
-import org.janelia.saalfeldlab.n5.ShortArrayDataBlock;
+import org.janelia.saalfeldlab.n5.hdf5.N5HDF5Util.OpenDataSetCache;
+import org.janelia.saalfeldlab.n5.hdf5.N5HDF5Util.OpenDataSetCache.OpenDataSet;
 import org.scijava.util.VersionUtils;
 
 import java.io.Closeable;
@@ -68,6 +58,14 @@ import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static hdf.hdf5lib.H5.H5Dget_space;
+import static hdf.hdf5lib.H5.H5Dread;
+import static hdf.hdf5lib.H5.H5Sclose;
+import static hdf.hdf5lib.H5.H5Screate_simple;
+import static hdf.hdf5lib.H5.H5Sselect_hyperslab;
+import static hdf.hdf5lib.HDF5Constants.H5S_SELECT_SET;
+import static org.janelia.saalfeldlab.n5.hdf5.N5HDF5Util.reorderToLong;
 
 /**
  * Best effort {@link N5Reader} implementation for HDF5 files.
@@ -101,6 +99,8 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	protected final int[] defaultBlockSize;
 
 	protected boolean overrideBlockSize = false;
+
+	protected final OpenDataSetCache openDataSetCache;
 
 	/**
 	 * Opens an {@link N5HDF5Reader} for a given HDF5 file.
@@ -137,6 +137,8 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 			this.defaultBlockSize = new int[0];
 		else
 			this.defaultBlockSize = defaultBlockSize;
+
+		this.openDataSetCache = new OpenDataSetCache(reader);
 	}
 
 	/**
@@ -606,91 +608,37 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 		final String normalizedPathName = N5URL.normalizePath(pathName);
 		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
 
-		final long[] hdf5Dimensions = datasetAttributes.getDimensions().clone();
-		reorder(hdf5Dimensions);
-		final int[] hdf5BlockSize = datasetAttributes.getBlockSize().clone();
-		reorder(hdf5BlockSize);
-		final long[] hdf5GridPosition = gridPosition.clone();
-		reorder(hdf5GridPosition);
-		final int[] hdf5CroppedBlockSize = new int[hdf5BlockSize.length];
-		final long[] hdf5Offset = new long[hdf5GridPosition.length];
+		final int n = datasetAttributes.getDimensions().length;
+		final int[] croppedBlockSize = new int[n];
+		final long[] hdf5Offset = new long[n];
 		cropBlockSize(
-				hdf5GridPosition,
-				hdf5Dimensions,
-				hdf5BlockSize,
-				hdf5CroppedBlockSize,
+				gridPosition,
+				datasetAttributes.getDimensions(),
+				datasetAttributes.getBlockSize(),
+				croppedBlockSize,
 				hdf5Offset);
 
-		final int[] croppedBlockSize = hdf5CroppedBlockSize.clone();
-		reorder(croppedBlockSize);
+		final long[] hdf5CroppedBlockSize = reorderToLong(croppedBlockSize);
+		reorder(hdf5Offset);
 
-		final DataBlock<?> dataBlock;
-		switch (datasetAttributes.getDataType()) {
-		case UINT8:
-			final MDByteArray uint8Array = reader
-					.uint8()
-					.readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
-			dataBlock = new ByteArrayDataBlock(croppedBlockSize, gridPosition, uint8Array.getAsFlatArray());
-			break;
-		case INT8:
-			final MDByteArray int8Array = reader
-					.int8()
-					.readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
-			dataBlock = new ByteArrayDataBlock(croppedBlockSize, gridPosition, int8Array.getAsFlatArray());
-			break;
-		case UINT16:
-			final MDShortArray uint16Array = reader
-					.uint16()
-					.readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
-			dataBlock = new ShortArrayDataBlock(croppedBlockSize, gridPosition, uint16Array.getAsFlatArray());
-			break;
-		case INT16:
-			final MDShortArray int16Array = reader
-					.int16()
-					.readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
-			dataBlock = new ShortArrayDataBlock(croppedBlockSize, gridPosition, int16Array.getAsFlatArray());
-			break;
-		case UINT32:
-			final MDIntArray uint32Array = reader
-					.uint32()
-					.readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
-			dataBlock = new IntArrayDataBlock(croppedBlockSize, gridPosition, uint32Array.getAsFlatArray());
-			break;
-		case INT32:
-			final MDIntArray int32Array = reader
-					.int32()
-					.readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
-			dataBlock = new IntArrayDataBlock(croppedBlockSize, gridPosition, int32Array.getAsFlatArray());
-			break;
-		case UINT64:
-			final MDLongArray uint64Array = reader
-					.uint64()
-					.readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
-			dataBlock = new LongArrayDataBlock(croppedBlockSize, gridPosition, uint64Array.getAsFlatArray());
-			break;
-		case INT64:
-			final MDLongArray int64Array = reader
-					.int64()
-					.readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
-			dataBlock = new LongArrayDataBlock(croppedBlockSize, gridPosition, int64Array.getAsFlatArray());
-			break;
-		case FLOAT32:
-			final MDFloatArray float32Array = reader
-					.float32()
-					.readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
-			dataBlock = new FloatArrayDataBlock(croppedBlockSize, gridPosition, float32Array.getAsFlatArray());
-			break;
-		case FLOAT64:
-			final MDDoubleArray float64Array = reader
-					.float64()
-					.readMDArrayBlockWithOffset(pathName, hdf5CroppedBlockSize, hdf5Offset);
-			dataBlock = new DoubleArrayDataBlock(croppedBlockSize, gridPosition, float64Array.getAsFlatArray());
-			break;
-		default:
-			dataBlock = null;
+		final DataType dataType = datasetAttributes.getDataType();
+		final long memTypeId;
+		try {
+			memTypeId = N5HDF5Util.memTypeId(dataType);
+		} catch (IllegalArgumentException e) {
+			return null;
 		}
+		final DataBlock<?> block = dataType.createDataBlock(croppedBlockSize, gridPosition.clone());
 
-		return dataBlock;
+		try (OpenDataSet dataset = openDataSetCache.get(pathName)) {
+			final long memorySpaceId = H5Screate_simple(hdf5CroppedBlockSize.length, hdf5CroppedBlockSize, null);
+			final long fileSpaceId = H5Dget_space(dataset.dataSetId);
+			H5Sselect_hyperslab(fileSpaceId, H5S_SELECT_SET, hdf5Offset, null, hdf5CroppedBlockSize, null);
+			H5Dread(dataset.dataSetId, memTypeId, memorySpaceId, fileSpaceId, openDataSetCache.numericConversionXferPropertyListID, block.getData());
+			H5Sclose(fileSpaceId);
+			H5Sclose(memorySpaceId);
+		}
+		return block;
 	}
 
 	@Override
@@ -768,6 +716,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	@Override
 	public void close() {
 
+		openDataSetCache.close();
 		reader.close();
 	}
 
@@ -801,5 +750,4 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 
 		return String.format("%s[file=%s]", getClass().getSimpleName(), reader.file().getFile());
 	}
-
 }

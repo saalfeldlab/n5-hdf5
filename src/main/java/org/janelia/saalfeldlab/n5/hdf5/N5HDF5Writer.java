@@ -56,6 +56,17 @@ import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.HDF5FloatStorageFeatures;
 import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;
 import ch.systemsx.cisd.hdf5.IHDF5Writer;
+import org.janelia.saalfeldlab.n5.hdf5.N5HDF5Util.OpenDataSetCache.OpenDataSet;
+
+import static hdf.hdf5lib.H5.H5Dget_space;
+import static hdf.hdf5lib.H5.H5Dwrite;
+import static hdf.hdf5lib.H5.H5Sclose;
+import static hdf.hdf5lib.H5.H5Screate_simple;
+import static hdf.hdf5lib.H5.H5Sselect_hyperslab;
+import static hdf.hdf5lib.HDF5Constants.H5P_DEFAULT;
+import static hdf.hdf5lib.HDF5Constants.H5S_SELECT_SET;
+import static org.janelia.saalfeldlab.n5.hdf5.N5HDF5Util.reorderMultiplyToLong;
+import static org.janelia.saalfeldlab.n5.hdf5.N5HDF5Util.reorderToLong;
 
 /**
  * Best effort {@link N5Writer} implementation for HDF5 files.
@@ -511,56 +522,17 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 		final String normalizedPathName = N5URL.normalizePath(pathName);
 		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
 
-		final int[] hdf5DataBlockSize = dataBlock.getSize().clone();
-		reorder(hdf5DataBlockSize);
-		final int[] hdf5BlockSize = datasetAttributes.getBlockSize().clone();
-		reorder(hdf5BlockSize);
-		final long[] gridPosition = dataBlock.getGridPosition();
-		final long[] hdf5Offset = new long[gridPosition.length];
-		Arrays.setAll(hdf5Offset, i -> gridPosition[gridPosition.length - i - 1] * hdf5BlockSize[i]);
-		switch (datasetAttributes.getDataType()) {
-		case UINT8:
-			final MDByteArray uint8TargetCell = new MDByteArray((byte[])dataBlock.getData(), hdf5DataBlockSize);
-			writer.uint8().writeMDArrayBlockWithOffset(pathName, uint8TargetCell, hdf5Offset);
-			break;
-		case INT8:
-			final MDByteArray int8TargetCell = new MDByteArray((byte[])dataBlock.getData(), hdf5DataBlockSize);
-			writer.int8().writeMDArrayBlockWithOffset(pathName, int8TargetCell, hdf5Offset);
-			break;
-		case UINT16:
-			final MDShortArray uint16TargetCell = new MDShortArray((short[])dataBlock.getData(), hdf5DataBlockSize);
-			writer.uint16().writeMDArrayBlockWithOffset(pathName, uint16TargetCell, hdf5Offset);
-			break;
-		case INT16:
-			final MDShortArray int16TargetCell = new MDShortArray((short[])dataBlock.getData(), hdf5DataBlockSize);
-			writer.int16().writeMDArrayBlockWithOffset(pathName, int16TargetCell, hdf5Offset);
-			break;
-		case UINT32:
-			final MDIntArray uint32TargetCell = new MDIntArray((int[])dataBlock.getData(), hdf5DataBlockSize);
-			writer.uint32().writeMDArrayBlockWithOffset(pathName, uint32TargetCell, hdf5Offset);
-			break;
-		case INT32:
-			final MDIntArray int32TargetCell = new MDIntArray((int[])dataBlock.getData(), hdf5DataBlockSize);
-			writer.int32().writeMDArrayBlockWithOffset(pathName, int32TargetCell, hdf5Offset);
-			break;
-		case UINT64:
-			final MDLongArray uint64TargetCell = new MDLongArray((long[])dataBlock.getData(), hdf5DataBlockSize);
-			writer.uint64().writeMDArrayBlockWithOffset(pathName, uint64TargetCell, hdf5Offset);
-			break;
-		case INT64:
-			final MDLongArray int64TargetCell = new MDLongArray((long[])dataBlock.getData(), hdf5DataBlockSize);
-			writer.int64().writeMDArrayBlockWithOffset(pathName, int64TargetCell, hdf5Offset);
-			break;
-		case FLOAT32:
-			final MDFloatArray float32TargetCell = new MDFloatArray((float[])dataBlock.getData(), hdf5DataBlockSize);
-			writer.float32().writeMDArrayBlockWithOffset(pathName, float32TargetCell, hdf5Offset);
-			break;
-		case FLOAT64:
-			final MDDoubleArray float64TargetCell = new MDDoubleArray((double[])dataBlock.getData(), hdf5DataBlockSize);
-			writer.float64().writeMDArrayBlockWithOffset(pathName, float64TargetCell, hdf5Offset);
-			break;
-		default:
-			throw new UnsupportedOperationException(datasetAttributes.getDataType() + " datatype not currently supported.");
+		final long[] hdf5DataBlockSize = reorderToLong(dataBlock.getSize());
+		final long[] hdf5Offset = reorderMultiplyToLong(dataBlock.getGridPosition(), datasetAttributes.getBlockSize());
+
+		try (OpenDataSet dataset = openDataSetCache.get(pathName)) {
+			final long memorySpaceId = H5Screate_simple(hdf5DataBlockSize.length, hdf5DataBlockSize, null);
+			final long fileSpaceId = H5Dget_space(dataset.dataSetId);
+			H5Sselect_hyperslab(fileSpaceId, H5S_SELECT_SET, hdf5Offset, null, hdf5DataBlockSize, null);
+			final long memTypeId = N5HDF5Util.memTypeId(datasetAttributes.getDataType());
+			H5Dwrite(dataset.dataSetId, memTypeId, memorySpaceId, fileSpaceId, H5P_DEFAULT, dataBlock.getData());
+			H5Sclose(fileSpaceId);
+			H5Sclose(memorySpaceId);
 		}
 	}
 
@@ -573,73 +545,30 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 			pathName = "/";
 
 		final DatasetAttributes datasetAttributes = getDatasetAttributes(pathName);
-
-		final long[] hdf5Dimensions = datasetAttributes.getDimensions().clone();
-		reorder(hdf5Dimensions);
-		final int[] hdf5BlockSize = datasetAttributes.getBlockSize().clone();
-		reorder(hdf5BlockSize);
-		final long[] hdf5GridPosition = gridPosition.clone();
-		reorder(hdf5GridPosition);
-		final int[] hdf5CroppedBlockSize = new int[hdf5BlockSize.length];
-		final long[] hdf5Offset = new long[hdf5GridPosition.length];
-		cropBlockSize(
-				hdf5GridPosition,
-				hdf5Dimensions,
-				hdf5BlockSize,
-				hdf5CroppedBlockSize,
-				hdf5Offset);
-
-		switch (datasetAttributes.getDataType()) {
+		final DataType dataType = datasetAttributes.getDataType();
+		switch (dataType) {
 			case UINT8:
-				final MDByteArray uint8TargetCell = new MDByteArray(hdf5CroppedBlockSize);
-				writer.uint8().writeMDArrayBlockWithOffset(pathName, uint8TargetCell, hdf5Offset);
-				break;
 			case INT8:
-				final MDByteArray int8TargetCell = new MDByteArray(hdf5CroppedBlockSize);
-				writer.int8().writeMDArrayBlockWithOffset(pathName, int8TargetCell, hdf5Offset);
-				break;
 			case UINT16:
-				final MDShortArray uint16TargetCell = new MDShortArray(hdf5CroppedBlockSize);
-				writer.uint16().writeMDArrayBlockWithOffset(pathName, uint16TargetCell, hdf5Offset);
-				break;
 			case INT16:
-				final MDShortArray int16TargetCell = new MDShortArray(hdf5CroppedBlockSize);
-				writer.int16().writeMDArrayBlockWithOffset(pathName, int16TargetCell, hdf5Offset);
-				break;
 			case UINT32:
-				final MDIntArray uint32TargetCell = new MDIntArray(hdf5CroppedBlockSize);
-				writer.uint32().writeMDArrayBlockWithOffset(pathName, uint32TargetCell, hdf5Offset);
-				break;
 			case INT32:
-				final MDIntArray int32TargetCell = new MDIntArray(hdf5CroppedBlockSize);
-				writer.int32().writeMDArrayBlockWithOffset(pathName, int32TargetCell, hdf5Offset);
-				break;
 			case UINT64:
-				final MDLongArray uint64TargetCell = new MDLongArray(hdf5CroppedBlockSize);
-				writer.uint64().writeMDArrayBlockWithOffset(pathName, uint64TargetCell, hdf5Offset);
-				break;
 			case INT64:
-				final MDLongArray int64TargetCell = new MDLongArray(hdf5CroppedBlockSize);
-				writer.int64().writeMDArrayBlockWithOffset(pathName, int64TargetCell, hdf5Offset);
-				break;
 			case FLOAT32:
-				final MDFloatArray float32TargetCell = new MDFloatArray(hdf5CroppedBlockSize);
-				writer.float32().writeMDArrayBlockWithOffset(pathName, float32TargetCell, hdf5Offset);
-				break;
 			case FLOAT64:
-				final MDDoubleArray float64TargetCell = new MDDoubleArray(hdf5CroppedBlockSize);
-				writer.float64().writeMDArrayBlockWithOffset(pathName, float64TargetCell, hdf5Offset);
-				break;
+				final DataBlock<?> empty = dataType.createDataBlock(datasetAttributes.getBlockSize(), gridPosition);
+				writeBlock(pathName, datasetAttributes, empty);
+				return true;
 			default:
 				return false;
 		}
-
-		return true;
 	}
 
 	@Override
 	public boolean remove() {
 
+		openDataSetCache.close();
 		final File file = writer.file().getFile();
 		writer.close();
 		return file.delete();
@@ -651,6 +580,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 		if (pathName.equals(""))
 			pathName = "/";
 
+		openDataSetCache.remove(pathName);
 		writer.delete(pathName);
 		return !writer.exists(pathName);
 	}
