@@ -304,10 +304,6 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 		final String normalizedPathName = N5URL.normalizePath(pathName);
 		final String finalPathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
 
-		if (!datasetExists(finalPathName))
-			createGroup(finalPathName);
-
-
 		/* Any key that looks like an attribute path is treated as one;
 		 *	The only exception are top level elements with a single leading `/` */
 		final String normalizedAttrPath = N5URL.normalizeAttributePath(key);
@@ -399,7 +395,6 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 
 		final String normalizedPathName = N5URL.normalizePath(pathName);
 		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
-		createGroup(pathName);
 
 		for (final Entry<String, ?> attribute : attributes.entrySet()) {
 			final String key = attribute.getKey();
