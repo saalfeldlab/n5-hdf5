@@ -182,15 +182,21 @@ final class N5HDF5Util {
 			cache.clear();
 		}
 
+		private boolean isClosed = false;
+
 		public synchronized void close() {
 			clear();
-			int status = H5Pclose(numericConversionXferPropertyListID);
-			if (status < 0) {
-				throw new RuntimeException("Error closing property list");
-			}
-			status = H5Fclose(fileId);
-			if (status < 0) {
-				throw new RuntimeException("Error closing file");
+			if (!isClosed) {
+				isClosed = true;
+
+				int status = H5Pclose(numericConversionXferPropertyListID);
+				if (status < 0) {
+					throw new RuntimeException("Error closing property list");
+				}
+				status = H5Fclose(fileId);
+				if (status < 0) {
+					throw new RuntimeException("Error closing file");
+				}
 			}
 		}
 	}
