@@ -18,6 +18,8 @@ package org.janelia.saalfeldlab.n5.hdf5;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -27,7 +29,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -36,6 +37,7 @@ import java.util.function.Predicate;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import hdf.hdf5lib.exceptions.HDF5SymbolTableException;
 import org.janelia.saalfeldlab.n5.AbstractN5Test;
 import org.janelia.saalfeldlab.n5.ByteArrayDataBlock;
 import org.janelia.saalfeldlab.n5.Compression;
@@ -75,7 +77,7 @@ import ch.systemsx.cisd.hdf5.IHDF5Writer;
 public class N5HDF5Test extends AbstractN5Test {
 
 	private static int[] defaultBlockSize = new int[]{5, 6, 7};
-	private static IHDF5Writer hdf5Writer;
+	private static IHDF5Reader hdf5Reader;
 
 	public static class Structured {
 
@@ -110,10 +112,10 @@ public class N5HDF5Test extends AbstractN5Test {
 		if (n5 != null) {
 			assertTrue(n5.remove());
 			n5 = null;
-			hdf5Writer = null;
-		} else if (hdf5Writer != null) {
-			hdf5Writer.close();
-			hdf5Writer = null;
+			hdf5Reader = null;
+		} else if (hdf5Reader != null) {
+			hdf5Reader.close();
+			hdf5Reader = null;
 		}
 	}
 
@@ -134,14 +136,15 @@ public class N5HDF5Test extends AbstractN5Test {
 
 	@Override protected N5Writer createN5Writer(String location, GsonBuilder gson) throws IOException {
 
-		hdf5Writer = createHDF5Writer(location);
+		final IHDF5Writer hdf5Writer = createHDF5Writer(location);
+		hdf5Reader = hdf5Writer;
 		return new N5HDF5Writer(hdf5Writer, false, gson);
 	}
 
 	@Override protected N5Reader createN5Reader(String location, GsonBuilder gson) throws IOException {
 
-		hdf5Writer = createHDF5Writer(location);
-		return new N5HDF5Reader(hdf5Writer, false, gson);
+		hdf5Reader = createHDF5Reader(location);
+		return new N5HDF5Reader(hdf5Reader, false, gson);
 	}
 
 	private static String createTestFilePath() throws IOException {
@@ -152,7 +155,8 @@ public class N5HDF5Test extends AbstractN5Test {
 	@Override
 	protected N5Writer createN5Writer(String location) throws IOException {
 
-		hdf5Writer = createHDF5Writer(location);
+		final IHDF5Writer hdf5Writer = createHDF5Writer(location);
+		hdf5Reader = hdf5Writer;
 		return new N5HDF5Writer(hdf5Writer);
 	}
 
@@ -165,6 +169,15 @@ public class N5HDF5Test extends AbstractN5Test {
 
 		Files.createDirectories(locationPath.getParent());
 		return HDF5Factory.open(locationPath.toFile().getCanonicalPath());
+	}
+
+	private static IHDF5Reader createHDF5Reader(String location) throws IOException {
+
+		Path locationPath = Paths.get(location);
+		if (Files.isDirectory(locationPath)) {
+			locationPath = locationPath.resolve("test.hdf5");
+		}
+		return HDF5Factory.openForReading(locationPath.toFile().getCanonicalPath());
 	}
 
 	@Override
@@ -237,6 +250,18 @@ public class N5HDF5Test extends AbstractN5Test {
 		n5.setAttribute("/", N5Reader.VERSION_KEY, N5HDF5Reader.VERSION.toString());
 	}
 
+	@Override
+	@Test
+	public void testSetAttributeDoesntCreateGroup() throws IOException {
+
+		try (final N5Writer writer = createN5Writer()) {
+			final String testGroup = "/group/should/not/exit";
+			assertFalse(writer.exists(testGroup));
+			assertThrows(HDF5SymbolTableException.class, () -> writer.setAttribute(testGroup, "test", "test"));
+			assertFalse(writer.exists(testGroup));
+		}
+	}
+
 	@Test
 	public void testOverrideBlockSize() throws IOException {
 
@@ -245,8 +270,8 @@ public class N5HDF5Test extends AbstractN5Test {
 		final DatasetAttributes attributes = new DatasetAttributes(dimensions, blockSize, DataType.INT8, new GzipCompression());
 		n5HDF5Writer.createDataset(datasetName, attributes);
 
-		hdf5Writer.close();
-		hdf5Writer = null;
+		hdf5Reader.close();
+		hdf5Reader = null;
 		n5HDF5Writer.close();
 
 		final IHDF5Reader hdf5Reader = HDF5Factory.openForReading( testFilePath );
