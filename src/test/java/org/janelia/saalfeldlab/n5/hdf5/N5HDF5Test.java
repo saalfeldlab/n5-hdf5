@@ -16,24 +16,23 @@
  */
 package org.janelia.saalfeldlab.n5.hdf5;
 
+
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.function.Predicate;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
@@ -218,12 +217,12 @@ public class N5HDF5Test extends AbstractN5Test {
 
 		System.out.println(n5Version);
 
-		Assert.assertTrue(n5Version.equals(N5HDF5Reader.VERSION));
+		assertEquals(n5Version, N5HDF5Reader.VERSION);
 
 		n5.setAttribute("/", N5Reader.VERSION_KEY,
 				new Version(N5HDF5Reader.VERSION.getMajor() + 1, N5HDF5Reader.VERSION.getMinor(), N5HDF5Reader.VERSION.getPatch()).toString());
 
-		Assert.assertFalse(N5HDF5Reader.VERSION.isCompatible(n5.getVersion()));
+		assertFalse(N5HDF5Reader.VERSION.isCompatible(n5.getVersion()));
 
 		n5.setAttribute("/", N5Reader.VERSION_KEY, N5HDF5Reader.VERSION.toString());
 	}
@@ -255,11 +254,11 @@ public class N5HDF5Test extends AbstractN5Test {
 		final IHDF5Reader hdf5Reader = HDF5Factory.openForReading( testFilePath );
 		final N5HDF5Reader n5Reader = new N5HDF5Reader(hdf5Reader, defaultBlockSize);
 		final DatasetAttributes originalAttributes = n5Reader.getDatasetAttributes(datasetName);
-		Assert.assertArrayEquals(blockSize, originalAttributes.getBlockSize());
+		assertArrayEquals(blockSize, originalAttributes.getBlockSize());
 
 		final N5HDF5Reader n5ReaderOverride = new N5HDF5Reader(hdf5Reader, true, defaultBlockSize);
 		final DatasetAttributes overriddenAttributes = n5ReaderOverride.getDatasetAttributes(datasetName);
-		Assert.assertArrayEquals(defaultBlockSize, overriddenAttributes.getBlockSize());
+		assertArrayEquals(defaultBlockSize, overriddenAttributes.getBlockSize());
 
 		n5Reader.close();
 		n5ReaderOverride.close();
@@ -287,19 +286,19 @@ public class N5HDF5Test extends AbstractN5Test {
 		final String testFilePath = tempN5Location();
 		{
 			try (final N5HDF5Reader h5 = new N5HDF5Writer( testFilePath )) {
-				Assert.assertFalse(h5.doesOverrideBlockSize());
+				assertFalse(h5.doesOverrideBlockSize());
 			}
 		}
 		// overrideBlockSize == false
 		{
 			try (final N5HDF5Reader h5 = new N5HDF5Reader( testFilePath, false)) {
-				Assert.assertFalse(h5.doesOverrideBlockSize());
+				assertFalse(h5.doesOverrideBlockSize());
 			}
 		}
 		// overrideBlockSize == false
 		{
 			try (final N5HDF5Reader h5 = new N5HDF5Reader( testFilePath, true)) {
-				Assert.assertTrue(h5.doesOverrideBlockSize());
+				assertTrue(h5.doesOverrideBlockSize());
 			}
 		}
 	}
@@ -309,13 +308,13 @@ public class N5HDF5Test extends AbstractN5Test {
 
 		String testFilePath = tempN5Location();
 		try (final N5HDF5Reader h5 = new N5HDF5Writer(testFilePath)) {
-			Assert.assertEquals(new File(testFilePath), h5.getFilename());
+			assertEquals(new File(testFilePath), h5.getFilename());
 		}
 
 	}
 
 	@Test
-	public void testStructuredAttributes() throws IOException {
+	public void testStructuredAttributes()  {
 
 		final Structured attribute = new Structured();
 		attribute.name = "myName";
@@ -423,50 +422,46 @@ public class N5HDF5Test extends AbstractN5Test {
 
 		final String groupName2 = groupName + "-2";
 		final String datasetName2 = datasetName + "-2";
-		try {
-			n5.createDataset(datasetName2, dimensions, blockSize, DataType.UINT64, new RawCompression());
-			n5.setAttribute(datasetName2, "attr1", new double[] {1.1, 2.1, 3.1});
-			n5.setAttribute(datasetName2, "attr2", new String[] {"a", "b", "c"});
-			n5.setAttribute(datasetName2, "attr3", 1.1);
-			n5.setAttribute(datasetName2, "attr4", "a");
-			n5.setAttribute(datasetName2, "attr5", new long[] {1, 2, 3});
-			n5.setAttribute(datasetName2, "attr6", 1);
-			n5.setAttribute(datasetName2, "attr7", new double[] {1, 2, 3.1});
-			n5.setAttribute(datasetName2, "attr8", new Object[] {"1", 2, 3.1});
+		n5.createDataset(datasetName2, dimensions, blockSize, DataType.UINT64, new RawCompression());
+		n5.setAttribute(datasetName2, "attr1", new double[] {1.1, 2.1, 3.1});
+		n5.setAttribute(datasetName2, "attr2", new String[] {"a", "b", "c"});
+		n5.setAttribute(datasetName2, "attr3", 1.1);
+		n5.setAttribute(datasetName2, "attr4", "a");
+		n5.setAttribute(datasetName2, "attr5", new long[] {1, 2, 3});
+		n5.setAttribute(datasetName2, "attr6", 1);
+		n5.setAttribute(datasetName2, "attr7", new double[] {1, 2, 3.1});
+		n5.setAttribute(datasetName2, "attr8", new Object[] {"1", 2, 3.1});
 
-			Map<String, Class<?>> attributesMap = n5.listAttributes(datasetName2);
-			Assert.assertTrue(attributesMap.get("attr1") == double[].class);
-			Assert.assertTrue(attributesMap.get("attr2") == String[].class);
-			Assert.assertTrue(attributesMap.get("attr3") == double.class);
-			Assert.assertTrue(attributesMap.get("attr4") == String.class);
-			Assert.assertTrue(attributesMap.get("attr5") == long[].class);
-			//HDF5 will parse an int as an int rather than a long
-			Assert.assertTrue(attributesMap.get("attr6") == int.class);
-			Assert.assertTrue(attributesMap.get("attr7") == double[].class);
-			Assert.assertTrue(attributesMap.get("attr8") == Object[].class);
+		Map<String, Class<?>> attributesMap = n5.listAttributes(datasetName2);
+		assertTrue(attributesMap.get("attr1") == double[].class);
+		assertTrue(attributesMap.get("attr2") == String[].class);
+		assertTrue(attributesMap.get("attr3") == double.class);
+		assertTrue(attributesMap.get("attr4") == String.class);
+		assertTrue(attributesMap.get("attr5") == long[].class);
+		//HDF5 will parse an int as an int rather than a long
+		assertTrue(attributesMap.get("attr6") == int.class);
+		assertTrue(attributesMap.get("attr7") == double[].class);
+		assertTrue(attributesMap.get("attr8") == Object[].class);
 
-			n5.createGroup(groupName2);
-			n5.setAttribute(groupName2, "attr1", new double[] {1.1, 2.1, 3.1});
-			n5.setAttribute(groupName2, "attr2", new String[] {"a", "b", "c"});
-			n5.setAttribute(groupName2, "attr3", 1.1);
-			n5.setAttribute(groupName2, "attr4", "a");
-			n5.setAttribute(groupName2, "attr5", new long[] {1, 2, 3});
-			n5.setAttribute(groupName2, "attr6", 1);
-			n5.setAttribute(groupName2, "attr7", new double[] {1, 2, 3.1});
-			n5.setAttribute(groupName2, "attr8", new Object[] {"1", 2, 3.1});
+		n5.createGroup(groupName2);
+		n5.setAttribute(groupName2, "attr1", new double[] {1.1, 2.1, 3.1});
+		n5.setAttribute(groupName2, "attr2", new String[] {"a", "b", "c"});
+		n5.setAttribute(groupName2, "attr3", 1.1);
+		n5.setAttribute(groupName2, "attr4", "a");
+		n5.setAttribute(groupName2, "attr5", new long[] {1, 2, 3});
+		n5.setAttribute(groupName2, "attr6", 1);
+		n5.setAttribute(groupName2, "attr7", new double[] {1, 2, 3.1});
+		n5.setAttribute(groupName2, "attr8", new Object[] {"1", 2, 3.1});
 
-			attributesMap = n5.listAttributes(groupName2);
-			Assert.assertTrue(attributesMap.get("attr1") == double[].class);
-			Assert.assertTrue(attributesMap.get("attr2") == String[].class);
-			Assert.assertTrue(attributesMap.get("attr3") == double.class);
-			Assert.assertTrue(attributesMap.get("attr4") == String.class);
-			Assert.assertTrue(attributesMap.get("attr5") == long[].class);
-			//HDF5 will parse an int as an int rather than a long
-			Assert.assertTrue(attributesMap.get("attr6") == int.class);
-			Assert.assertTrue(attributesMap.get("attr7") == double[].class);
-			Assert.assertTrue(attributesMap.get("attr8") == Object[].class);
-		} catch (final IOException e) {
-			fail(e.getMessage());
-		}
+		attributesMap = n5.listAttributes(groupName2);
+		assertTrue(attributesMap.get("attr1") == double[].class);
+		assertTrue(attributesMap.get("attr2") == String[].class);
+		assertTrue(attributesMap.get("attr3") == double.class);
+		assertTrue(attributesMap.get("attr4") == String.class);
+		assertTrue(attributesMap.get("attr5") == long[].class);
+		//HDF5 will parse an int as an int rather than a long
+		assertTrue(attributesMap.get("attr6") == int.class);
+		assertTrue(attributesMap.get("attr7") == double[].class);
+		assertTrue(attributesMap.get("attr8") == Object[].class);
 	}
 }
