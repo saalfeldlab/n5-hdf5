@@ -285,7 +285,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 	@Override
 	public void createGroup(String pathName) throws IOException {
 
-		final String normalizedPathName = N5URL.normalizePath(pathName);
+		final String normalizedPathName = N5URI.normalizeGroupPath(pathName);
 		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
 
 		if (writer.exists(pathName)) {
@@ -301,12 +301,12 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 			final String key,
 			final T attribute) throws IOException {
 
-		final String normalizedPathName = N5URL.normalizePath(pathName);
+		final String normalizedPathName = N5URI.normalizeGroupPath(pathName);
 		final String finalPathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
 
 		/* Any key that looks like an attribute path is treated as one;
 		 *	The only exception are top level elements with a single leading `/` */
-		final String normalizedAttrPath = N5URL.normalizeAttributePath(key);
+		final String normalizedAttrPath = N5URI.normalizeAttributePath(key);
 		final String normalizedKey = normalizedAttrPath.isEmpty() ? "/" : normalizedAttrPath;
 
 		if (writer.object().hasAttribute(finalPathName, normalizedKey)) {
@@ -322,7 +322,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 		final boolean isPath =
 				attributePathTokens.length > 2
 						|| attributePathTokens.length > 1 && attributePathTokens[0].length() > 0
-						|| N5URL.ARRAY_INDEX.asPredicate().test(normalizedKey)
+						|| N5URI.ARRAY_INDEX.asPredicate().test(normalizedKey)
 						|| containsEscapeCharacters(normalizedKey);
 		if (isRoot || isPath ) {
 			writeAttributeAsJson(finalPathName, normalizedKey, attribute);
@@ -385,7 +385,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 		}
 
 		//TODO How to handle writing top-level keys that have existing native keys (such as datasetAtributes)
-		root = GsonN5Writer.insertAttribute(root, N5URL.normalizeAttributePath(key), attribute, gson );
+		root = GsonUtils.insertAttribute(root, N5URI.normalizeAttributePath(key), attribute, gson );
 		writer.string().setAttr(pathName, N5_JSON_ROOT_KEY, gson.toJson(root));
 	}
 
@@ -393,7 +393,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 	public void setAttributes( String pathName, final Map<String, ?> attributes) throws IOException {
 
 
-		final String normalizedPathName = N5URL.normalizePath(pathName);
+		final String normalizedPathName = N5URI.normalizeGroupPath(pathName);
 		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
 
 		for (final Entry<String, ?> attribute : attributes.entrySet()) {
@@ -418,14 +418,14 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 	@Override public boolean removeAttribute(String pathName, String key) throws IOException {
 
 
-		final String normalizedPathName = N5URL.normalizePath(pathName);
+		final String normalizedPathName = N5URI.normalizeGroupPath(pathName);
 		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
 
 		if (!exists(pathName)) {
 			return false;
 		}
 
-		final String normalizedAttrPath = N5URL.normalizeAttributePath(key);
+		final String normalizedAttrPath = N5URI.normalizeAttributePath(key);
 		final String normalizedKey = normalizedAttrPath.isEmpty() ? "/" : normalizedAttrPath;
 
 		if (writer.object().hasAttribute(pathName, normalizedKey)) {
@@ -434,7 +434,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 		}
 		if (writer.object().hasAttribute(pathName, N5_JSON_ROOT_KEY)) {
 			final JsonElement jsonRoot = getAttribute(pathName, N5_JSON_ROOT_KEY, JsonElement.class);
-			if (GsonN5Writer.removeAttribute(jsonRoot, N5URL.normalizeAttributePath(normalizedKey)) != null) {
+			if (GsonUtils.removeAttribute(jsonRoot, N5URI.normalizeAttributePath(normalizedKey)) != null) {
 				writer.string().setAttr(pathName, N5_JSON_ROOT_KEY, gson.toJson(jsonRoot));
 				return true;
 			}
@@ -444,14 +444,14 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 
 	@Override public <T> T removeAttribute(String pathName, String key, Class<T> cls) throws IOException {
 
-		final String normalizedPathName = N5URL.normalizePath(pathName);
+		final String normalizedPathName = N5URI.normalizeGroupPath(pathName);
 		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
 
 		if (!exists(pathName)) {
 			return null;
 		}
 
-		final String normalizedAttrPath = N5URL.normalizeAttributePath(key);
+		final String normalizedAttrPath = N5URI.normalizeAttributePath(key);
 		final String normalizedKey = (normalizedAttrPath.isEmpty() || normalizedAttrPath.equals(N5_JSON_ROOT_KEY)) ? "/" : normalizedAttrPath;
 
 
@@ -462,7 +462,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 			}
 			if (writer.object().hasAttribute(pathName, N5_JSON_ROOT_KEY)) {
 				final JsonElement jsonRoot = getAttribute(pathName, N5_JSON_ROOT_KEY, JsonElement.class);
-				if (GsonN5Writer.removeAttribute(jsonRoot, N5URL.normalizeAttributePath(normalizedKey), cls, gson) != null) {
+				if (GsonUtils.removeAttribute(jsonRoot, N5URI.normalizeAttributePath(normalizedKey), cls, gson) != null) {
 					writer.string().setAttr(pathName, N5_JSON_ROOT_KEY, gson.toJson(jsonRoot));
 				}
 			}
@@ -475,7 +475,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 			String pathName,
 			final List<String> attributes) throws IOException {
 
-		final String normalizedPathName = N5URL.normalizePath(pathName);
+		final String normalizedPathName = N5URI.normalizeGroupPath(pathName);
 		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
 
 
@@ -488,7 +488,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 		boolean removed = false;
 		for (String attribute : attributes) {
 
-			final String normalizedAttrPath = N5URL.normalizeAttributePath(attribute);
+			final String normalizedAttrPath = N5URI.normalizeAttributePath(attribute);
 			attribute = (normalizedAttrPath.isEmpty() || normalizedAttrPath.equals(N5_JSON_ROOT_KEY)) ? "/" : normalizedAttrPath;
 
 			if (writer.object().hasAttribute(pathName, attribute)) {
@@ -502,7 +502,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 			}
 
 			if (jsonRoot != null) {
-				removed |= GsonN5Writer.removeAttribute(jsonRoot, N5URL.normalizeAttributePath(attribute)) != null;
+				removed |= GsonUtils.removeAttribute(jsonRoot, N5URI.normalizeAttributePath(attribute)) != null;
 			}
 		}
 		if (removed && jsonRoot != null) {
@@ -518,7 +518,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 			final DatasetAttributes datasetAttributes,
 			final DataBlock<T> dataBlock) throws IOException {
 
-		final String normalizedPathName = N5URL.normalizePath(pathName);
+		final String normalizedPathName = N5URI.normalizeGroupPath(pathName);
 		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
 
 		final long[] hdf5DataBlockSize = reorderToLong(dataBlock.getSize());

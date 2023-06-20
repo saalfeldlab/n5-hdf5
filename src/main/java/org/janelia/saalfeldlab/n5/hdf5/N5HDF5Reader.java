@@ -244,7 +244,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	@Override
 	public boolean exists(String pathName) {
 
-		final String normalizedPathName = N5URL.normalizePath(pathName);
+		final String normalizedPathName = N5URI.normalizeGroupPath(pathName);
 		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
 
 		return reader.exists(pathName);
@@ -253,7 +253,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	@Override
 	public String[] list(String pathName) throws IOException {
 
-		final String normalizedPathName = N5URL.normalizePath(pathName);
+		final String normalizedPathName = N5URI.normalizeGroupPath(pathName);
 		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
 
 		try {
@@ -273,10 +273,10 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	@Override
 	public <T> T getAttribute(String pathName, String key, final Type type) throws IOException {
 
-		final String normalizedPathName = N5URL.normalizePath(pathName);
+		final String normalizedPathName = N5URI.normalizeGroupPath(pathName);
 		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
 
-		final String normalizedAttrPath = N5URL.normalizeAttributePath(key);
+		final String normalizedAttrPath = N5URI.normalizeAttributePath(key);
 		final String normalizedKey = normalizedAttrPath.isEmpty() ? "/" : normalizedAttrPath;
 
 		if (!reader.exists(pathName))
@@ -334,7 +334,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 				final String n5JsonRoot = reader.string().getAttr(pathName, N5_JSON_ROOT_KEY);
 				final JsonElement root = JsonParser.parseString(n5JsonRoot);
 				final String jsonKey = normalizedKey.equals(N5_JSON_ROOT_KEY) ? "/" : normalizedKey;
-				gsonAttribute = GsonN5Reader.getAttribute(root, jsonKey);
+				gsonAttribute = GsonUtils.getAttribute(root, jsonKey);
 			}
 			final JsonElement attribute;
 			if (normalizedKey.equals("/")) {
@@ -573,7 +573,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	@Override
 	public DatasetAttributes getDatasetAttributes(String pathName) {
 
-		final String normalizedPathName = N5URL.normalizePath(pathName);
+		final String normalizedPathName = N5URI.normalizeGroupPath(pathName);
 		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
 
 		if (!datasetExists(pathName))
@@ -609,7 +609,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 			final DatasetAttributes datasetAttributes,
 			final long... gridPosition) throws IOException {
 
-		final String normalizedPathName = N5URL.normalizePath(pathName);
+		final String normalizedPathName = N5URI.normalizeGroupPath(pathName);
 		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
 
 		final int n = datasetAttributes.getDimensions().length;
@@ -648,7 +648,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	@Override
 	public boolean datasetExists(String pathName) {
 
-		final String normalizedPathName = N5URL.normalizePath(pathName);
+		final String normalizedPathName = N5URI.normalizeGroupPath(pathName);
 		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
 
 		return reader.exists(pathName) && reader.object().isDataSet(pathName);
@@ -663,7 +663,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	@Override
 	public Map<String, Class<?>> listAttributes(final String pathName) throws IOException {
 
-		final String normalizedPathName = N5URL.normalizePath(pathName);
+		final String normalizedPathName = N5URI.normalizeGroupPath(pathName);
 		final String finalPathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
 
 		final HashMap<String, Class<?>> attributes = new HashMap<>();
@@ -693,7 +693,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 											} else if (!rootElement.isJsonPrimitive()) {
 												rootClass = Object.class;
 											} else {
-												rootClass = GsonAttributesParser.classForJsonPrimitive(rootElement.getAsJsonPrimitive());
+												rootClass = GsonUtils.classForJsonPrimitive(rootElement.getAsJsonPrimitive());
 											}
 											attributes.put(entry.getKey(), rootClass);
 										}
