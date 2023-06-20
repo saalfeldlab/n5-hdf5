@@ -376,7 +376,11 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 			} else {
 				attribute = gsonAttribute;
 			}
-			return GsonN5Reader.readAttribute(attribute, "", type, gson);
+			try {
+				return GsonUtils.parseAttributeElement(attribute, gson, type);
+			} catch (JsonSyntaxException | NumberFormatException | ClassCastException e ) {
+				throw new N5ClassCastException(e);
+			}
 		}
 
 		final HDF5DataTypeInformation attributeInfo = reader.object().getAttributeInformation(pathName, normalizedKey);
