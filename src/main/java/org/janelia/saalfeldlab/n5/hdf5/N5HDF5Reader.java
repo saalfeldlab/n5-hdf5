@@ -404,94 +404,119 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 
 		final HDF5DataTypeInformation attributeInfo = reader.object().getAttributeInformation(pathName, normalizedKey);
 		final Class<?> clazz = attributeInfo.tryGetJavaType();
-		if (clazz.isAssignableFrom(long[].class))
+		final T hdf5Attribute;
+		if (clazz.isAssignableFrom(long[].class)) {
 			if (attributeInfo.isSigned())
-				return (T)reader.int64().getArrayAttr(pathName, normalizedKey);
+				hdf5Attribute = (T)reader.int64().getArrayAttr(pathName, normalizedKey);
 			else
-				return (T)reader.uint64().getArrayAttr(pathName, normalizedKey);
-		if (clazz.isAssignableFrom(int[].class))
+				hdf5Attribute = (T)reader.uint64().getArrayAttr(pathName, normalizedKey);
+		}
+		else if (clazz.isAssignableFrom(int[].class)) {
 			if (attributeInfo.isSigned())
-				return (T)reader.int32().getArrayAttr(pathName, normalizedKey);
+				hdf5Attribute = (T)reader.int32().getArrayAttr(pathName, normalizedKey);
 			else
-				return (T)reader.uint32().getArrayAttr(pathName, normalizedKey);
-		if (clazz.isAssignableFrom(short[].class))
+				hdf5Attribute = (T)reader.uint32().getArrayAttr(pathName, normalizedKey);
+		}
+		else if (clazz.isAssignableFrom(short[].class)) {
 			if (attributeInfo.isSigned())
-				return (T)reader.int16().getArrayAttr(pathName, normalizedKey);
+				hdf5Attribute = (T)reader.int16().getArrayAttr(pathName, normalizedKey);
 			else
-				return (T)reader.uint16().getArrayAttr(pathName, normalizedKey);
-		if (clazz.isAssignableFrom(byte[].class)) {
+				hdf5Attribute = (T)reader.uint16().getArrayAttr(pathName, normalizedKey);
+		}
+		else if (clazz.isAssignableFrom(byte[].class)) {
 			if (attributeInfo.isSigned())
-				return (T)reader.int8().getArrayAttr(pathName, normalizedKey);
+				hdf5Attribute = (T)reader.int8().getArrayAttr(pathName, normalizedKey);
 			else
-				return (T)reader.uint8().getArrayAttr(pathName, normalizedKey);
+				hdf5Attribute = (T)reader.uint8().getArrayAttr(pathName, normalizedKey);
 		} else if (clazz.isAssignableFrom(double[].class))
-			return (T)reader.float64().getArrayAttr(pathName, normalizedKey);
+			hdf5Attribute = (T)reader.float64().getArrayAttr(pathName, normalizedKey);
 		else if (clazz.isAssignableFrom(float[].class))
-			return (T)reader.float32().getArrayAttr(pathName, normalizedKey);
+			hdf5Attribute = (T)reader.float32().getArrayAttr(pathName, normalizedKey);
 		else if (clazz.isAssignableFrom(String[].class))
-			return (T)reader.string().getArrayAttr(pathName, normalizedKey);
-		if (clazz.isAssignableFrom(long.class)) {
+			hdf5Attribute = (T)reader.string().getArrayAttr(pathName, normalizedKey);
+		else if (clazz.isAssignableFrom(long.class)) {
 			if (attributeInfo.isSigned())
-				return (T)new Long(reader.int64().getAttr(pathName, normalizedKey));
+				hdf5Attribute = (T)new Long(reader.int64().getAttr(pathName, normalizedKey));
 			else
-				return (T)new Long(reader.uint64().getAttr(pathName, normalizedKey));
+				hdf5Attribute = (T)new Long(reader.uint64().getAttr(pathName, normalizedKey));
 		} else if (clazz.isAssignableFrom(int.class)) {
 			if (attributeInfo.isSigned())
-				return (T)new Integer(reader.int32().getAttr(pathName, normalizedKey));
+				hdf5Attribute = (T)new Integer(reader.int32().getAttr(pathName, normalizedKey));
 			else
-				return (T)new Integer(reader.uint32().getAttr(pathName, normalizedKey));
+				hdf5Attribute = (T)new Integer(reader.uint32().getAttr(pathName, normalizedKey));
 		} else if (clazz.isAssignableFrom(short.class)) {
 			if (attributeInfo.isSigned())
-				return (T)new Short(reader.int16().getAttr(pathName, normalizedKey));
+				hdf5Attribute = (T)new Short(reader.int16().getAttr(pathName, normalizedKey));
 			else
-				return (T)new Short(reader.uint16().getAttr(pathName, normalizedKey));
+				hdf5Attribute = (T)new Short(reader.uint16().getAttr(pathName, normalizedKey));
 		} else if (clazz.isAssignableFrom(byte.class)) {
 			if (attributeInfo.isSigned())
-				return (T)new Byte(reader.int8().getAttr(pathName, normalizedKey));
+				hdf5Attribute = (T)new Byte(reader.int8().getAttr(pathName, normalizedKey));
 			else
-				return (T)new Byte(reader.uint8().getAttr(pathName, normalizedKey));
+				hdf5Attribute = (T)new Byte(reader.uint8().getAttr(pathName, normalizedKey));
 		} else if (clazz.isAssignableFrom(double.class))
-			return (T)new Double(reader.float64().getAttr(pathName, normalizedKey));
+			hdf5Attribute = (T)new Double(reader.float64().getAttr(pathName, normalizedKey));
 		else if (clazz.isAssignableFrom(float.class))
-			return (T)new Float(reader.float32().getAttr(pathName, normalizedKey));
+			hdf5Attribute = (T)new Float(reader.float32().getAttr(pathName, normalizedKey));
 		else if (clazz.isAssignableFrom(boolean.class))
-			return (T)Boolean.valueOf(reader.bool().getAttr(pathName, normalizedKey));
+			hdf5Attribute = (T)Boolean.valueOf(reader.bool().getAttr(pathName, normalizedKey));
 		else if (clazz.isAssignableFrom(String.class)) {
-			final String attributeString = reader.string().getAttr(pathName, normalizedKey);
-			Class<T> typeClass = null;
+			final String attributeString;
+			if (attributeInfo.isArrayType()) {
+				attributeString = gson.toJson(reader.string().getArrayAttr(pathName, normalizedKey));
+			} else {
+				attributeString = reader.string().getAttr(pathName, normalizedKey);
+			}
+			Class<T> typeClass;
 			try {
 				typeClass = (Class<T>)type;
 			} catch (ClassCastException e) {
-				typeClass = null;
-			}
-			if (typeClass == null) {
 				return (T)attributeString;
 			}
-			if (typeClass.isAssignableFrom(String.class)) {
-				// Here the assumption is made that if the `Gson` object is configured to serializeNulls, and the retrieved attribute is the String `"null"`
-				//	That it most likey was a quirk of a `null` value being serialized as the String `"null"`, and thus return `null`
-				if (gson.serializeNulls() && attributeString.equals("null")) {
-					return null;
-				}
-				return (T)attributeString;
-			} else if (typeClass.isAssignableFrom(JsonElement.class)) {
-				//TODO: See if this can be done better:
-				//	If the `attributeString` is intended to be interpreted as a `String`, it needs to be wrapped with `"..."` quotes to make it a valid json string.
-				//	Unfortunately it's not easy to know if the value is a json string or json structure until attempting to parse it.
-				if (attributeString.isEmpty()) {
-					return gson.fromJson("\"" + attributeString + "\"", type);
-				}
-				try {
+			try {
+				if (typeClass.isAssignableFrom(String.class)) {
+					// Here the assumption is made that if the `Gson` object is configured to serializeNulls, and the retrieved attribute is the String `"null"`
+					//	That it most likey was a quirk of a `null` value being serialized as the String `"null"`, and thus return `null`
+					if (gson.serializeNulls() && attributeString.equals("null")) {
+						return null;
+					}
+					return (T)attributeString;
+				} else if (typeClass.isAssignableFrom(JsonElement.class)) {
+					//TODO: See if this can be done better:
+					//	If the `attributeString` is intended to be interpreted as a `String`, it needs to be wrapped with `"..."` quotes to make it a valid json string.
+					//	Unfortunately it's not easy to know if the value is a json string or json structure until attempting to parse it.
+					if (attributeString.isEmpty()) {
+						return gson.fromJson("\"" + attributeString + "\"", type);
+					}
+					try {
+						return gson.fromJson(attributeString, type);
+					} catch (JsonSyntaxException e) {
+						return gson.fromJson("\"" + attributeString + "\"", type);
+					}
+				} else
 					return gson.fromJson(attributeString, type);
-				} catch (JsonSyntaxException e) {
-					return gson.fromJson("\"" + attributeString + "\"", type);
-				}
-			} else
-				return gson.fromJson(attributeString, type);
+			} catch (JsonSyntaxException | ClassCastException | NumberFormatException e) {
+				throw new N5ClassCastException(e);
+			}
+		} else {
+			hdf5Attribute = null;
 		}
-
-		System.err.println("Reading attributes of type " + attributeInfo + " not yet implemented.");
-		return null;
+		if (type instanceof Class<?>) {
+			final Class<T> typeClass = (Class<T>)type;
+			final JsonElement jsonTree = gson.toJsonTree(hdf5Attribute);
+			if (typeClass.isAssignableFrom(JsonElement.class)) {
+				return (T)jsonTree;
+			} else  if (typeClass.isAssignableFrom(String.class)) {
+				return (T) gson.toJson(hdf5Attribute);
+			} else {
+				try {
+					return GsonUtils.parseAttributeElement(jsonTree, gson, type);
+				} catch (JsonSyntaxException | NumberFormatException | ClassCastException e) {
+					throw new N5ClassCastException(e);
+				}
+			}
+		}
+		return hdf5Attribute;
 	}
 
 	@Override public URI getURI() {
@@ -502,7 +527,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	@Override
 	public <T> T getAttribute(String pathName, final String key, final Class<T> clazz) throws N5Exception {
 
-		return getAttribute(pathName, key, TypeToken.get(clazz).getType());
+		return getAttribute(pathName, key, (Type)clazz);
 	}
 
 	@Override
