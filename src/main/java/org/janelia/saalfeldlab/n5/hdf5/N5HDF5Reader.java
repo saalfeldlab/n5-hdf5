@@ -91,6 +91,8 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 
 	protected static final String N5_JSON_ROOT_KEY = "N5_JSON_ROOT";
 
+	protected static final FileSystemKeyValueAccess FILE_SYSTEM_KEY_VALUE_ACCESS = new FileSystemKeyValueAccess(FileSystems.getDefault());
+
 	/**
 	 * SemVer version of this N5-HDF5 spec.
 	 */
