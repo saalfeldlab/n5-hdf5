@@ -30,28 +30,24 @@ import com.google.gson.JsonParser;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import hdf.hdf5lib.exceptions.HDF5Exception;
 import org.janelia.saalfeldlab.n5.Compression;
 import org.janelia.saalfeldlab.n5.DataBlock;
 import org.janelia.saalfeldlab.n5.DataType;
 import org.janelia.saalfeldlab.n5.DatasetAttributes;
 import org.janelia.saalfeldlab.n5.GsonN5Writer;
-import org.janelia.saalfeldlab.n5.N5URL;
+import org.janelia.saalfeldlab.n5.GsonUtils;
+import org.janelia.saalfeldlab.n5.N5Exception;
+import org.janelia.saalfeldlab.n5.N5URI;
 import org.janelia.saalfeldlab.n5.N5Writer;
 import org.janelia.saalfeldlab.n5.RawCompression;
 
 import com.google.gson.GsonBuilder;
 
-import ch.systemsx.cisd.base.mdarray.MDByteArray;
-import ch.systemsx.cisd.base.mdarray.MDDoubleArray;
-import ch.systemsx.cisd.base.mdarray.MDFloatArray;
-import ch.systemsx.cisd.base.mdarray.MDIntArray;
-import ch.systemsx.cisd.base.mdarray.MDLongArray;
-import ch.systemsx.cisd.base.mdarray.MDShortArray;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.HDF5FloatStorageFeatures;
 import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;
@@ -65,6 +61,7 @@ import static hdf.hdf5lib.H5.H5Screate_simple;
 import static hdf.hdf5lib.H5.H5Sselect_hyperslab;
 import static hdf.hdf5lib.HDF5Constants.H5P_DEFAULT;
 import static hdf.hdf5lib.HDF5Constants.H5S_SELECT_SET;
+import static org.janelia.saalfeldlab.n5.N5Exception.*;
 import static org.janelia.saalfeldlab.n5.hdf5.N5HDF5Util.reorderMultiplyToLong;
 import static org.janelia.saalfeldlab.n5.hdf5.N5HDF5Util.reorderToLong;
 
@@ -92,14 +89,14 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 	 *            for all dimensions &gt; defaultBlockSize.length, and for all
 	 *            dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *            dataset will be used
-	 * @throws IOException
+	 * @throws N5Exception
      *            the exception
 	 */
 	public N5HDF5Writer(
 			final IHDF5Writer writer,
 			final boolean overrideBlockSize,
 			final GsonBuilder gsonBuilder,
-			final int... defaultBlockSize) throws IOException {
+			final int... defaultBlockSize) throws N5Exception {
 
 		super(writer, overrideBlockSize, gsonBuilder, defaultBlockSize);
 		this.writer = writer;
@@ -171,7 +168,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 			final String hdf5Path,
 			final boolean overrideBlockSize,
 			final GsonBuilder gsonBuilder,
-			final int... defaultBlockSize) throws IOException {
+			final int... defaultBlockSize) {
 
 		this(HDF5Factory.open(hdf5Path), overrideBlockSize, gsonBuilder, defaultBlockSize);
 	}
@@ -222,7 +219,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 	@Override
 	public void createDataset(
 			final String pathName,
-			final DatasetAttributes datasetAttributes) throws IOException {
+			final DatasetAttributes datasetAttributes) throws N5Exception {
 
 		final DataType dataType = datasetAttributes.getDataType();
 		final Compression compression = datasetAttributes.getCompression();
@@ -283,14 +280,14 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 	}
 
 	@Override
-	public void createGroup(String pathName) throws IOException {
+	public void createGroup(String pathName) throws N5Exception {
 
 		final String normalizedPathName = N5URI.normalizeGroupPath(pathName);
 		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
 
 		if (writer.exists(pathName)) {
 			if (!writer.isGroup(pathName))
-				throw new IOException("Group " + pathName + " already exists and is not a group.");
+				throw new N5Exception("Group " + pathName + " already exists and is not a group.");
 		} else
 			writer.object().createGroup(pathName);
 	}
@@ -299,7 +296,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 	public <T> void setAttribute(
 			String pathName,
 			final String key,
-			final T attribute) throws IOException {
+			final T attribute) throws N5Exception {
 
 		final String normalizedPathName = N5URI.normalizeGroupPath(pathName);
 		final String finalPathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
@@ -390,7 +387,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 	}
 
 	@Override
-	public void setAttributes( String pathName, final Map<String, ?> attributes) throws IOException {
+	public void setAttributes( String pathName, final Map<String, ?> attributes) throws N5Exception {
 
 
 		final String normalizedPathName = N5URI.normalizeGroupPath(pathName);
@@ -410,12 +407,12 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 	@Override
 	public void setDatasetAttributes(
 			final String pathName,
-			final DatasetAttributes datasetAttributes) throws IOException {
+			final DatasetAttributes datasetAttributes) throws N5Exception {
 
 		throw new UnsupportedOperationException("HDF5 datasets cannot be reshaped.");
 	}
 
-	@Override public boolean removeAttribute(String pathName, String key) throws IOException {
+	@Override public boolean removeAttribute(String pathName, String key) throws N5Exception {
 
 
 		final String normalizedPathName = N5URI.normalizeGroupPath(pathName);
@@ -442,7 +439,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 		return false;
 	}
 
-	@Override public <T> T removeAttribute(String pathName, String key, Class<T> cls) throws IOException {
+	@Override public <T> T removeAttribute(String pathName, String key, Class<T> cls) throws N5Exception {
 
 		final String normalizedPathName = N5URI.normalizeGroupPath(pathName);
 		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
@@ -473,7 +470,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 	@Override
 	public boolean removeAttributes(
 			String pathName,
-			final List<String> attributes) throws IOException {
+			final List<String> attributes) throws N5Exception {
 
 		final String normalizedPathName = N5URI.normalizeGroupPath(pathName);
 		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
@@ -516,7 +513,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 	public <T> void writeBlock(
 			String pathName,
 			final DatasetAttributes datasetAttributes,
-			final DataBlock<T> dataBlock) throws IOException {
+			final DataBlock<T> dataBlock) throws N5Exception {
 
 		final String normalizedPathName = N5URI.normalizeGroupPath(pathName);
 		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
@@ -536,7 +533,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 	}
 
 	@Override
-	public boolean deleteBlock(String pathName, final long... gridPosition) throws IOException {
+	public boolean deleteBlock(String pathName, final long... gridPosition) throws N5Exception {
 
 		// deletion is not supported in HDF5, so the block is overwritten with zeroes instead
 
@@ -574,7 +571,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 	}
 
 	@Override
-	public boolean remove(String pathName) throws IOException {
+	public boolean remove(String pathName) throws N5Exception {
 
 		if (pathName.equals(""))
 			pathName = "/";

@@ -36,16 +36,19 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
+import hdf.hdf5lib.exceptions.HDF5Exception;
 import org.janelia.saalfeldlab.n5.Compression;
 import org.janelia.saalfeldlab.n5.Compression.CompressionType;
 import org.janelia.saalfeldlab.n5.CompressionAdapter;
 import org.janelia.saalfeldlab.n5.DataBlock;
 import org.janelia.saalfeldlab.n5.DataType;
 import org.janelia.saalfeldlab.n5.DatasetAttributes;
-import org.janelia.saalfeldlab.n5.GsonAttributesParser;
+import org.janelia.saalfeldlab.n5.FileSystemKeyValueAccess;
 import org.janelia.saalfeldlab.n5.GsonN5Reader;
+import org.janelia.saalfeldlab.n5.GsonUtils;
+import org.janelia.saalfeldlab.n5.N5Exception;
 import org.janelia.saalfeldlab.n5.N5Reader;
-import org.janelia.saalfeldlab.n5.N5URL;
+import org.janelia.saalfeldlab.n5.N5URI;
 import org.janelia.saalfeldlab.n5.RawCompression;
 import org.janelia.saalfeldlab.n5.hdf5.N5HDF5Util.OpenDataSetCache;
 import org.janelia.saalfeldlab.n5.hdf5.N5HDF5Util.OpenDataSetCache.OpenDataSet;
@@ -55,6 +58,9 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.FileSystems;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +71,7 @@ import static hdf.hdf5lib.H5.H5Sclose;
 import static hdf.hdf5lib.H5.H5Screate_simple;
 import static hdf.hdf5lib.H5.H5Sselect_hyperslab;
 import static hdf.hdf5lib.HDF5Constants.H5S_SELECT_SET;
+import static org.janelia.saalfeldlab.n5.N5Exception.*;
 import static org.janelia.saalfeldlab.n5.hdf5.N5HDF5Util.reorderToLong;
 
 /**
@@ -119,7 +126,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 			final IHDF5Reader reader,
 			final boolean overrideBlockSize,
 			final GsonBuilder gsonBuilder,
-			final int... defaultBlockSize) throws IOException {
+			final int... defaultBlockSize) throws N5Exception {
 
 		gsonBuilder.registerTypeAdapter(DataType.class, new DataType.JsonAdapter());
 		gsonBuilder.registerTypeHierarchyAdapter(Compression.class, CompressionAdapter.getJsonAdapter());
@@ -129,7 +136,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 		this.reader = reader;
 		final Version version = getVersion();
 		if (!VERSION.isCompatible(version))
-			throw new IOException("Incompatible N5-HDF5 version " + version + " (this is " + VERSION + ").");
+			throw new N5Exception("Incompatible N5-HDF5 version " + version + " (this is " + VERSION + ").");
 
 		this.overrideBlockSize = overrideBlockSize;
 
@@ -194,7 +201,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 			final String hdf5Path,
 			final boolean overrideBlockSize,
 			final GsonBuilder gsonBuilder,
-			final int... defaultBlockSize) throws IOException {
+			final int... defaultBlockSize) {
 
 		this(HDF5Factory.openForReading(hdf5Path), overrideBlockSize, gsonBuilder, defaultBlockSize);
 	}
@@ -214,9 +221,9 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	public N5HDF5Reader(
 			final String hdf5Path,
 			final boolean overrideBlockSize,
-			final int... defaultBlockSize) throws IOException {
+			final int... defaultBlockSize) {
 
-		this(HDF5Factory.openForReading(hdf5Path), overrideBlockSize, defaultBlockSize);
+		this(hdf5Path, overrideBlockSize, new GsonBuilder(), defaultBlockSize);
 	}
 
 	/**
@@ -230,9 +237,9 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	 */
 	public N5HDF5Reader(
 			final String hdf5Path,
-			final int... defaultBlockSize) throws IOException {
+			final int... defaultBlockSize)  {
 
-		this(HDF5Factory.openForReading(hdf5Path), defaultBlockSize);
+		this(hdf5Path, false, defaultBlockSize);
 	}
 
 	@Override
@@ -251,7 +258,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	}
 
 	@Override
-	public String[] list(String pathName) throws IOException {
+	public String[] list(String pathName) throws N5Exception {
 
 		final String normalizedPathName = N5URI.normalizeGroupPath(pathName);
 		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
@@ -260,7 +267,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 			final List<String> members = reader.object().getGroupMembers(pathName);
 			return members.toArray(new String[members.size()]);
 		} catch (final Exception e) {
-			throw new IOException(e);
+			throw new N5Exception(e);
 		}
 	}
 
@@ -271,7 +278,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T> T getAttribute(String pathName, String key, final Type type) throws IOException {
+	public <T> T getAttribute(String pathName, String key, final Type type) throws N5Exception {
 
 		final String normalizedPathName = N5URI.normalizeGroupPath(pathName);
 		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
@@ -470,13 +477,13 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T> T getAttribute(String pathName, final String key, final Class<T> clazz) throws IOException {
+	public <T> T getAttribute(String pathName, final String key, final Class<T> clazz) throws N5Exception {
 
 		return getAttribute(pathName, key, TypeToken.get(clazz).getType());
 	}
 
 	@Override
-	public JsonElement getAttributes(final String pathName) throws IOException {
+	public JsonElement getAttributes(final String pathName) throws N5Exception {
 
 		return getAttribute(pathName, "/", JsonElement.class);
 	}
@@ -607,7 +614,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	public DataBlock<?> readBlock(
 			String pathName,
 			final DatasetAttributes datasetAttributes,
-			final long... gridPosition) throws IOException {
+			final long... gridPosition) throws N5Exception {
 
 		final String normalizedPathName = N5URI.normalizeGroupPath(pathName);
 		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
@@ -661,7 +668,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	 * 3) An Object   if it is a JsonObject
 	 */
 	@Override
-	public Map<String, Class<?>> listAttributes(final String pathName) throws IOException {
+	public Map<String, Class<?>> listAttributes(final String pathName) throws N5Exception {
 
 		final String normalizedPathName = N5URI.normalizeGroupPath(pathName);
 		final String finalPathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
