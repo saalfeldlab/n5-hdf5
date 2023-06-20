@@ -403,6 +403,10 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 		}
 	}
 
+	@Override public void setAttributes(String groupPath, JsonElement attributes) throws N5Exception {
+		setAttribute(groupPath, "/", attributes);
+	}
+
 	@Override
 	public void setDatasetAttributes(
 			final String pathName,

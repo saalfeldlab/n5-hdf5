@@ -464,6 +464,10 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 		return null;
 	}
 
+	@Override public URI getURI() {
+		return this.reader.file().getFile().toURI();
+	}
+
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T getAttribute(String pathName, final String key, final Class<T> clazz) throws IOException {
