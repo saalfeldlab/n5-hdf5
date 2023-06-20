@@ -170,7 +170,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 			final GsonBuilder gsonBuilder,
 			final int... defaultBlockSize) {
 
-		this(HDF5Factory.open(hdf5Path), overrideBlockSize, gsonBuilder, defaultBlockSize);
+		this(openHdf5Writer(hdf5Path), overrideBlockSize, gsonBuilder, defaultBlockSize);
 	}
 
 	/**
@@ -579,5 +579,14 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 		openDataSetCache.remove(pathName);
 		writer.delete(pathName);
 		return !writer.exists(pathName);
+	}
+
+	private static IHDF5Writer openHdf5Writer(String hdf5Path) {
+
+		try {
+			return HDF5Factory.open(normalizeHdf5PathLocation(hdf5Path));
+		} catch (HDF5Exception e) {
+			throw new N5IOException("Cannot open HDF5 Writer", new IOException(e));
+		}
 	}
 }

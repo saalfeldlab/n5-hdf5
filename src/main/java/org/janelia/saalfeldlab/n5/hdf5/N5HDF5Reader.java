@@ -205,7 +205,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 			final GsonBuilder gsonBuilder,
 			final int... defaultBlockSize) {
 
-		this(HDF5Factory.openForReading(hdf5Path), overrideBlockSize, gsonBuilder, defaultBlockSize);
+		this(openHdf5Reader(hdf5Path), overrideBlockSize, gsonBuilder, defaultBlockSize);
 	}
 
 	/**
@@ -270,6 +270,23 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 			return members.toArray(new String[members.size()]);
 		} catch (final Exception e) {
 			throw new N5Exception(e);
+		}
+	}
+
+	private static IHDF5Reader openHdf5Reader(String hdf5Path) {
+
+		try {
+			return HDF5Factory.openForReading(normalizeHdf5PathLocation(hdf5Path));
+		} catch (HDF5Exception e) {
+			throw new N5IOException("Cannot open HDF5 Reader", new IOException(e));
+		}
+	}
+
+	protected static String normalizeHdf5PathLocation(String hdf5Path) {
+		try {
+			return FILE_SYSTEM_KEY_VALUE_ACCESS.uri(hdf5Path).getPath();
+		} catch (URISyntaxException e) {
+			return hdf5Path;
 		}
 	}
 
