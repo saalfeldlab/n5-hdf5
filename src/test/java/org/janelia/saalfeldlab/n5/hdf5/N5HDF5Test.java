@@ -104,12 +104,17 @@ public class N5HDF5Test extends AbstractN5Test {
 
 	@Override protected String tempN5Location() throws IOException {
 
-		return Files.createTempFile("n5-hdf5-test-", ".hdf5").toFile().getCanonicalPath();
+		final StackTraceElement stackTraceElement = Thread.currentThread().getStackTrace()[2];
+		String locator = stackTraceElement.getFileName() + "-L" + stackTraceElement.getLineNumber() + "-";
+		return Files.createTempFile("n5-hdf5-test-" + locator, ".hdf5").toFile().getCanonicalPath();
 	}
 
-	@Override protected N5Writer createN5Writer() throws IOException, URISyntaxException {
+	@Override protected N5HDF5Writer createN5Writer() throws IOException, URISyntaxException {
 
-		final String hdf5Path = resolveTestHdf5Path(tempN5Location());
+		final String location = tempN5Location();
+		final String hdf5Path = resolveTestHdf5Path(location);
+		Files.deleteIfExists(Paths.get(location));
+		Files.deleteIfExists(Paths.get(hdf5Path));
 		final N5HDF5Writer writer = new N5HDF5Writer(hdf5Path, false, new GsonBuilder()) {
 
 			@Override public void close() {
@@ -190,20 +195,23 @@ public class N5HDF5Test extends AbstractN5Test {
 
 	@Override
 	@Test
-	public void testVersion() throws NumberFormatException, IOException {
+	public void testVersion() throws NumberFormatException, IOException, URISyntaxException {
 
-		final Version n5Version = n5.getVersion();
+		try (N5Writer n5 = createN5Writer()) {
 
-		System.out.println(n5Version);
+			final Version n5Version = n5.getVersion();
 
-		assertEquals(n5Version, N5HDF5Reader.VERSION);
+			System.out.println(n5Version);
 
-		n5.setAttribute("/", N5Reader.VERSION_KEY,
-				new Version(N5HDF5Reader.VERSION.getMajor() + 1, N5HDF5Reader.VERSION.getMinor(), N5HDF5Reader.VERSION.getPatch()).toString());
+			assertEquals(n5Version, N5HDF5Reader.VERSION);
 
-		assertFalse(N5HDF5Reader.VERSION.isCompatible(n5.getVersion()));
+			n5.setAttribute("/", N5Reader.VERSION_KEY,
+					new Version(N5HDF5Reader.VERSION.getMajor() + 1, N5HDF5Reader.VERSION.getMinor(), N5HDF5Reader.VERSION.getPatch()).toString());
 
-		n5.setAttribute("/", N5Reader.VERSION_KEY, N5HDF5Reader.VERSION.toString());
+			assertFalse(N5HDF5Reader.VERSION.isCompatible(n5.getVersion()));
+
+			n5.setAttribute("/", N5Reader.VERSION_KEY, N5HDF5Reader.VERSION.toString());
+		}
 	}
 
 	@Override
@@ -241,49 +249,44 @@ public class N5HDF5Test extends AbstractN5Test {
 	}
 
 	@Test
-	public void testDefaultBlockSizeGetter() throws IOException {
+	public void testDefaultBlockSizeGetter() throws IOException, URISyntaxException {
 		// do not pass array
 		{
-			try (final N5HDF5Reader h5 = new N5HDF5Writer(tempN5Location())) {
+			try (final N5HDF5Writer h5 = createN5Writer()) {
 				assertArrayEquals(new int[]{}, h5.getDefaultBlockSizeCopy());
 			}
 		}
 		// pass array
 		{
-			try (final N5HDF5Reader h5 = new N5HDF5Writer(tempN5Location(), defaultBlockSize)) {
+			try (final N5HDF5Writer h5 = new N5HDF5Writer(tempN5Location(), defaultBlockSize)) {
 				assertArrayEquals(defaultBlockSize, h5.getDefaultBlockSizeCopy());
+				h5.remove();
 			}
 		}
 	}
 
 	@Test
-	public void testOverrideBlockSizeGetter() throws IOException {
+	public void testOverrideBlockSizeGetter() throws IOException, URISyntaxException {
 		// default behavior
-		final String testFilePath = tempN5Location();
-		{
-			try (final N5HDF5Reader h5 = new N5HDF5Writer( testFilePath )) {
-				assertFalse(h5.doesOverrideBlockSize());
+		try (final N5HDF5Writer h5 = createN5Writer()) {
+			final String testFilePath = h5.getURI().getPath();
+			assertFalse(h5.doesOverrideBlockSize());
+			// overrideBlockSize == false
+			try (final N5HDF5Reader asReader = new N5HDF5Reader( testFilePath, false)) {
+				assertFalse(asReader.doesOverrideBlockSize());
 			}
-		}
-		// overrideBlockSize == false
-		{
-			try (final N5HDF5Reader h5 = new N5HDF5Reader( testFilePath, false)) {
-				assertFalse(h5.doesOverrideBlockSize());
-			}
-		}
-		// overrideBlockSize == false
-		{
-			try (final N5HDF5Reader h5 = new N5HDF5Reader( testFilePath, true)) {
-				assertTrue(h5.doesOverrideBlockSize());
+			// overrideBlockSize == false
+			try (final N5HDF5Reader asReader = new N5HDF5Reader( testFilePath, true)) {
+				assertTrue(asReader.doesOverrideBlockSize());
 			}
 		}
 	}
 
 	@Test
-	public void testFilenameGetter() throws IOException {
+	public void testFilenameGetter() throws IOException, URISyntaxException {
 
-		String testFilePath = tempN5Location();
-		try (final N5HDF5Reader h5 = new N5HDF5Writer(testFilePath)) {
+		try (final N5HDF5Writer h5 = createN5Writer()) {
+			final String testFilePath = h5.getURI().getPath();
 			assertEquals(new File(testFilePath), h5.getFilename());
 		}
 
