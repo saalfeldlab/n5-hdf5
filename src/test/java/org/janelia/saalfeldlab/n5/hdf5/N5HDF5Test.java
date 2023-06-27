@@ -104,9 +104,7 @@ public class N5HDF5Test extends AbstractN5Test {
 
 	@Override protected String tempN5Location() throws IOException {
 
-		final StackTraceElement stackTraceElement = Thread.currentThread().getStackTrace()[2];
-		String locator = stackTraceElement.getFileName() + "-L" + stackTraceElement.getLineNumber() + "-";
-		return Files.createTempFile("n5-hdf5-test-" + locator, ".hdf5").toFile().getCanonicalPath();
+		return Files.createTempFile("n5-hdf5-test-", ".hdf5").toFile().getCanonicalPath();
 	}
 
 	@Override protected N5HDF5Writer createN5Writer() throws IOException, URISyntaxException {
@@ -120,7 +118,7 @@ public class N5HDF5Test extends AbstractN5Test {
 			@Override public void close() {
 
 				super.close();
-				remove();
+				assertTrue(remove());
 			}
 		};
 		return writer;
@@ -229,23 +227,22 @@ public class N5HDF5Test extends AbstractN5Test {
 	@Test
 	public void testOverrideBlockSize() throws IOException, URISyntaxException {
 
-		N5Writer n5HDF5Writer = createN5Writer();
-		final String testFilePath = n5HDF5Writer.getURI().getPath();
-		final DatasetAttributes attributes = new DatasetAttributes(dimensions, blockSize, DataType.INT8, new GzipCompression());
-		n5HDF5Writer.createDataset(datasetName, attributes);
+		try (N5Writer n5HDF5Writer = createN5Writer()) {
+			final String testFilePath = n5HDF5Writer.getURI().getPath();
+			final DatasetAttributes attributes = new DatasetAttributes(dimensions, blockSize, DataType.INT8, new GzipCompression());
+			n5HDF5Writer.createDataset(datasetName, attributes);
 
-		final IHDF5Reader hdf5Reader = HDF5Factory.openForReading( testFilePath );
-		final N5HDF5Reader n5Reader = new N5HDF5Reader(hdf5Reader, defaultBlockSize);
-		final DatasetAttributes originalAttributes = n5Reader.getDatasetAttributes(datasetName);
-		assertArrayEquals(blockSize, originalAttributes.getBlockSize());
+			final IHDF5Reader hdf5Reader = HDF5Factory.openForReading(testFilePath);
+			try (N5HDF5Reader n5Reader = new N5HDF5Reader(hdf5Reader, defaultBlockSize)) {
+				final DatasetAttributes originalAttributes = n5Reader.getDatasetAttributes(datasetName);
+				assertArrayEquals(blockSize, originalAttributes.getBlockSize());
+				try (N5HDF5Reader n5ReaderOverride = new N5HDF5Reader(hdf5Reader, true, defaultBlockSize)) {
+					final DatasetAttributes overriddenAttributes = n5ReaderOverride.getDatasetAttributes(datasetName);
+					assertArrayEquals(defaultBlockSize, overriddenAttributes.getBlockSize());
+				}
+			}
 
-		final DatasetAttributes overriddenAttributes;
-		final N5HDF5Reader n5ReaderOverride = new N5HDF5Reader(hdf5Reader, true, defaultBlockSize);
-		overriddenAttributes = n5ReaderOverride.getDatasetAttributes(datasetName);
-		assertArrayEquals(defaultBlockSize, overriddenAttributes.getBlockSize());
-
-		n5HDF5Writer.close();
-		n5HDF5Writer.remove();
+		}
 	}
 
 	@Test

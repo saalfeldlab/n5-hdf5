@@ -137,8 +137,11 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 
 		this.reader = reader;
 		final Version version = getVersion();
-		if (!VERSION.isCompatible(version))
+		if (!VERSION.isCompatible(version)) {
+			reader.close();
 			throw new N5Exception("Incompatible N5-HDF5 version " + version + " (this is " + VERSION + ").");
+		}
+
 
 		this.overrideBlockSize = overrideBlockSize;
 
