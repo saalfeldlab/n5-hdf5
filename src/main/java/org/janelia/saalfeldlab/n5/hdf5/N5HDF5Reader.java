@@ -122,7 +122,6 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	 * @param defaultBlockSize  for all dimensions &gt; defaultBlockSize.length, and for all
 	 *                          dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *                          dataset will be used
-	 * @throws IOException the exception
 	 */
 	public N5HDF5Reader(
 			final IHDF5Reader reader,
@@ -163,12 +162,11 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	 * @param defaultBlockSize  for all dimensions &gt; defaultBlockSize.length, and for all
 	 *                          dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *                          dataset will be used
-	 * @throws IOException the exception
 	 */
 	public N5HDF5Reader(
 			final IHDF5Reader reader,
 			final boolean overrideBlockSize,
-			final int... defaultBlockSize) throws IOException {
+			final int... defaultBlockSize) {
 
 		this(reader, overrideBlockSize, new GsonBuilder(), defaultBlockSize);
 	}
@@ -200,7 +198,6 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	 * @param defaultBlockSize  for all dimensions &gt; defaultBlockSize.length, and for all
 	 *                          dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *                          dataset will be used
-	 * @throws IOException the exception
 	 */
 	public N5HDF5Reader(
 			final String hdf5Path,
@@ -221,7 +218,6 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	 * @param defaultBlockSize  for all dimensions &gt; defaultBlockSize.length, and for all
 	 *                          dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *                          dataset will be used
-	 * @throws IOException the exception
 	 */
 	public N5HDF5Reader(
 			final String hdf5Path,
@@ -238,7 +234,6 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	 * @param defaultBlockSize for all dimensions &gt; defaultBlockSize.length, and for all
 	 *                         dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *                         dataset will be used
-	 * @throws IOException the exception
 	 */
 	public N5HDF5Reader(
 			final String hdf5Path,
