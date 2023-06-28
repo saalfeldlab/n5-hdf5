@@ -16,24 +16,27 @@
  */
 package org.janelia.saalfeldlab.n5.hdf5;
 
+
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.function.Predicate;
 
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import hdf.hdf5lib.exceptions.HDF5SymbolTableException;
 import org.janelia.saalfeldlab.n5.AbstractN5Test;
 import org.janelia.saalfeldlab.n5.ByteArrayDataBlock;
 import org.janelia.saalfeldlab.n5.Compression;
@@ -50,19 +53,15 @@ import org.janelia.saalfeldlab.n5.N5Reader.Version;
 import org.janelia.saalfeldlab.n5.N5Writer;
 import org.janelia.saalfeldlab.n5.RawCompression;
 import org.janelia.saalfeldlab.n5.ShortArrayDataBlock;
-import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
-import ch.systemsx.cisd.hdf5.IHDF5Writer;
 
 /**
  *
@@ -73,10 +72,7 @@ import ch.systemsx.cisd.hdf5.IHDF5Writer;
  */
 public class N5HDF5Test extends AbstractN5Test {
 
-	private static String testDirPath = System.getProperty("user.home") + "/tmp/n5-test.hdf5";
 	private static int[] defaultBlockSize = new int[]{5, 6, 7};
-	private static IHDF5Writer hdf5Writer;
-
 	public static class Structured {
 
 		public String name = "";
@@ -98,26 +94,6 @@ public class N5HDF5Test extends AbstractN5Test {
 		}
 	}
 
-	@Before
-	public void before() throws IOException {
-
-		after();
-		n5 = createN5Writer();
-	}
-
-	public void after() throws IOException {
-
-		if (n5 != null) {
-			assertTrue(n5.remove());
-			n5 = null;
-			hdf5Writer = null;
-		} else if (hdf5Writer != null) {
-			hdf5Writer.close();
-			hdf5Writer = null;
-		}
-	}
-
-
 	@Override
 	protected Compression[] getCompressions() {
 
@@ -126,32 +102,61 @@ public class N5HDF5Test extends AbstractN5Test {
 				new GzipCompression()};
 	}
 
-	@Override
-	protected N5Writer createN5Writer() throws IOException {
+	@Override protected String tempN5Location() throws IOException {
 
-		Files.createDirectories(Paths.get(testDirPath).getParent());
-		hdf5Writer = HDF5Factory.open(testDirPath);
-		return new N5HDF5Writer(hdf5Writer);
+		return Files.createTempFile("n5-hdf5-test-", ".hdf5").toFile().getCanonicalPath();
 	}
-	
-	@Override
-	@Test
-	public void testCreateGroup() {
 
+	@Override protected N5HDF5Writer createN5Writer() throws IOException, URISyntaxException {
+
+		final String location = tempN5Location();
+		final String hdf5Path = resolveTestHdf5Path(location);
+		Files.deleteIfExists(Paths.get(location));
+		Files.deleteIfExists(Paths.get(hdf5Path));
+		final N5HDF5Writer writer = new N5HDF5Writer(hdf5Path, false, new GsonBuilder()) {
+
+			@Override public void close() {
+
+				super.close();
+				assertTrue(remove());
+			}
+		};
+		return writer;
+	}
+
+	@Override protected N5Writer createN5Writer(String location, GsonBuilder gson) throws IOException {
+
+		final N5HDF5Writer writer = new N5HDF5Writer(resolveTestHdf5Path(location), false, gson);
+		return writer;
+	}
+
+	@Override protected N5Reader createN5Reader(String location, GsonBuilder gson) throws IOException {
+
+		return new N5HDF5Reader(resolveTestHdf5Path(location), false, gson);
+	}
+
+	@Override
+	protected N5Writer createN5Writer(String location) throws IOException {
+
+		final N5HDF5Writer writer = new N5HDF5Writer(resolveTestHdf5Path(location));
+		return writer;
+	}
+
+	private static String resolveTestHdf5Path(String location) throws IOException {
+
+		Path locationPath;
 		try {
-			n5.createGroup(groupName);
-		} catch (final IOException e) {
-			fail(e.getMessage());
+			final URI locationUri = N5HDF5Reader.FILE_SYSTEM_KEY_VALUE_ACCESS.uri(location);
+			locationPath = FileSystems.getDefault().provider().getPath(locationUri);
+		} catch (URISyntaxException e) {
+			locationPath = Paths.get(location);
 		}
-
-		final Path groupPath = Paths.get(groupName);
-		for (int i = 0; i < groupPath.getNameCount(); ++i)
-			//replace `\` with `/` in the case of Windows
-			if (!n5.exists(groupPath.subpath(0, i + 1)
-					.toString()
-					.replace(File.separatorChar, '/')))
-				fail("Group does not exist");
+		if (Files.isDirectory(locationPath)) {
+			locationPath = locationPath.resolve("test.hdf5");
+		}
+		return locationPath.toFile().getCanonicalPath();
 	}
+
 
 	@Override
 	@Test
@@ -188,173 +193,200 @@ public class N5HDF5Test extends AbstractN5Test {
 
 	@Override
 	@Test
-	public void testVersion() throws NumberFormatException, IOException {
+	public void testVersion() throws NumberFormatException, IOException, URISyntaxException {
 
-		final Version n5Version = n5.getVersion();
+		try (N5Writer n5 = createN5Writer()) {
 
-		System.out.println(n5Version);
+			final Version n5Version = n5.getVersion();
 
-		Assert.assertTrue(n5Version.equals(N5HDF5Reader.VERSION));
+			System.out.println(n5Version);
 
-		n5.setAttribute("/", N5Reader.VERSION_KEY,
-				new Version(N5HDF5Reader.VERSION.getMajor() + 1, N5HDF5Reader.VERSION.getMinor(), N5HDF5Reader.VERSION.getPatch()).toString());
+			assertEquals(n5Version, N5HDF5Reader.VERSION);
 
-		Assert.assertFalse(N5HDF5Reader.VERSION.isCompatible(n5.getVersion()));
+			n5.setAttribute("/", N5Reader.VERSION_KEY,
+					new Version(N5HDF5Reader.VERSION.getMajor() + 1, N5HDF5Reader.VERSION.getMinor(), N5HDF5Reader.VERSION.getPatch()).toString());
 
-		n5.setAttribute("/", N5Reader.VERSION_KEY, N5HDF5Reader.VERSION.toString());
+			assertFalse(N5HDF5Reader.VERSION.isCompatible(n5.getVersion()));
+
+			n5.setAttribute("/", N5Reader.VERSION_KEY, N5HDF5Reader.VERSION.toString());
+		}
+	}
+
+	@Override
+	@Test
+	public void testSetAttributeDoesntCreateGroup() throws IOException, URISyntaxException {
+
+		try (final N5Writer writer = createN5Writer()) {
+			final String testGroup = "/group/should/not/exit";
+			assertFalse(writer.exists(testGroup));
+			assertThrows(HDF5SymbolTableException.class, () -> writer.setAttribute(testGroup, "test", "test"));
+			assertFalse(writer.exists(testGroup));
+		}
 	}
 
 	@Test
-	public void testOverrideBlockSize() throws IOException {
+	public void testOverrideBlockSize() throws IOException, URISyntaxException {
 
-		final DatasetAttributes attributes = new DatasetAttributes(dimensions, blockSize, DataType.INT8, new GzipCompression());
-		n5.createDataset(datasetName, attributes);
+		try (N5Writer n5HDF5Writer = createN5Writer()) {
+			final String testFilePath = n5HDF5Writer.getURI().getPath();
+			final DatasetAttributes attributes = new DatasetAttributes(dimensions, blockSize, DataType.INT8, new GzipCompression());
+			n5HDF5Writer.createDataset(datasetName, attributes);
 
-		hdf5Writer.close();
-		hdf5Writer = null;
-		n5 = null;
+			final IHDF5Reader hdf5Reader = HDF5Factory.openForReading(testFilePath);
+			try (N5HDF5Reader n5Reader = new N5HDF5Reader(hdf5Reader, defaultBlockSize)) {
+				final DatasetAttributes originalAttributes = n5Reader.getDatasetAttributes(datasetName);
+				assertArrayEquals(blockSize, originalAttributes.getBlockSize());
+				try (N5HDF5Reader n5ReaderOverride = new N5HDF5Reader(hdf5Reader, true, defaultBlockSize)) {
+					final DatasetAttributes overriddenAttributes = n5ReaderOverride.getDatasetAttributes(datasetName);
+					assertArrayEquals(defaultBlockSize, overriddenAttributes.getBlockSize());
+				}
+			}
 
-		final IHDF5Reader hdf5Reader = HDF5Factory.openForReading(testDirPath);
-		final N5HDF5Reader n5Reader = new N5HDF5Reader(hdf5Reader, defaultBlockSize);
-		final DatasetAttributes originalAttributes = n5Reader.getDatasetAttributes(datasetName);
-		Assert.assertArrayEquals(blockSize, originalAttributes.getBlockSize());
-
-		final N5HDF5Reader n5ReaderOverride = new N5HDF5Reader(hdf5Reader, true, defaultBlockSize);
-		final DatasetAttributes overriddenAttributes = n5ReaderOverride.getDatasetAttributes(datasetName);
-		Assert.assertArrayEquals(defaultBlockSize, overriddenAttributes.getBlockSize());
-
-		n5Reader.close();
-		n5ReaderOverride.close();
+		}
 	}
 
 	@Test
-	public void testDefaultBlockSizeGetter() throws IOException {
+	public void testDefaultBlockSizeGetter() throws IOException, URISyntaxException {
 		// do not pass array
 		{
-			try (final N5HDF5Reader h5  = new N5HDF5Writer(testDirPath)) {
-				Assert.assertArrayEquals(new int[]{}, h5.getDefaultBlockSizeCopy());
+			try (final N5HDF5Writer h5 = createN5Writer()) {
+				assertArrayEquals(new int[]{}, h5.getDefaultBlockSizeCopy());
 			}
 		}
 		// pass array
 		{
-			try (final N5HDF5Reader h5 = new N5HDF5Writer(testDirPath, defaultBlockSize)) {
-				Assert.assertArrayEquals(defaultBlockSize, h5.getDefaultBlockSizeCopy());
+			try (final N5HDF5Writer h5 = new N5HDF5Writer(tempN5Location(), defaultBlockSize)) {
+				assertArrayEquals(defaultBlockSize, h5.getDefaultBlockSizeCopy());
+				h5.remove();
 			}
 		}
 	}
 
 	@Test
-	public void testOverrideBlockSizeGetter() throws IOException {
+	public void testOverrideBlockSizeGetter() throws IOException, URISyntaxException {
 		// default behavior
-		{
-			try (final N5HDF5Reader h5 = new N5HDF5Writer(testDirPath)) {
-				Assert.assertFalse(h5.doesOverrideBlockSize());
+		try (final N5HDF5Writer h5 = createN5Writer()) {
+			final String testFilePath = h5.getURI().getPath();
+			assertFalse(h5.doesOverrideBlockSize());
+			// overrideBlockSize == false
+			try (final N5HDF5Reader asReader = new N5HDF5Reader( testFilePath, false)) {
+				assertFalse(asReader.doesOverrideBlockSize());
 			}
-		}
-		// overrideBlockSize == false
-		{
-			try (final N5HDF5Reader h5 = new N5HDF5Reader(testDirPath, false)) {
-				Assert.assertFalse(h5.doesOverrideBlockSize());
-			}
-		}
-		// overrideBlockSize == false
-		{
-			try (final N5HDF5Reader h5 = new N5HDF5Reader(testDirPath, true)) {
-				Assert.assertTrue(h5.doesOverrideBlockSize());
+			// overrideBlockSize == false
+			try (final N5HDF5Reader asReader = new N5HDF5Reader( testFilePath, true)) {
+				assertTrue(asReader.doesOverrideBlockSize());
 			}
 		}
 	}
 
 	@Test
-	public void testFilenameGetter() throws IOException {
-		try (final N5HDF5Reader h5  = new N5HDF5Writer(testDirPath)) {
-			Assert.assertEquals(new File(testDirPath), h5.getFilename());
+	public void testFilenameGetter() throws IOException, URISyntaxException {
+
+		try (final N5HDF5Writer h5 = createN5Writer()) {
+			final String testFilePath = h5.getURI().getPath();
+			assertEquals(new File(testFilePath), h5.getFilename());
 		}
 
 	}
 
 	@Test
-	public void testStructuredAttributes() throws IOException {
+	public void testStructuredAttributes() throws IOException, URISyntaxException {
 
-		final Structured attribute = new Structured();
-		attribute.name = "myName";
-		attribute.id = 20;
-		attribute.data = new double[] {1, 2, 3, 4};
+		try (N5Writer n5 = createN5Writer()) {
+			final Structured attribute = new Structured();
+			attribute.name = "myName";
+			attribute.id = 20;
+			attribute.data = new double[]{1, 2, 3, 4};
 
-		n5.createGroup("/structuredAttributes");
-		n5.setAttribute("/structuredAttributes", "myAttribute", attribute);
+			n5.createGroup("/structuredAttributes");
+			n5.setAttribute("/structuredAttributes", "myAttribute", attribute);
 
-		/* class interface */
-		Structured readAttribute = n5.getAttribute("/structuredAttributes", "myAttribute", Structured.class);
-		assertEquals(attribute, readAttribute);
+			/* class interface */
+			Structured readAttribute = n5.getAttribute("/structuredAttributes", "myAttribute", Structured.class);
+			assertEquals(attribute, readAttribute);
 
-		/* type interface */
-		readAttribute = n5.getAttribute("/structuredAttributes", "myAttribute", new TypeToken<Structured>(){}.getType());
-		assertEquals(attribute, readAttribute);
+			/* type interface */
+			readAttribute = n5.getAttribute("/structuredAttributes", "myAttribute", new TypeToken<Structured>() {
 
-		n5.remove("/structuredAttributes");
+			}.getType());
+			assertEquals(attribute, readAttribute);
+
+			n5.remove("/structuredAttributes");
+		}
 	}
 
 	@Test
 	public void testAttributesAsJson() throws IOException {
 
-		N5HDF5Writer h5 = (N5HDF5Writer) n5;
-		final Structured attribute = new Structured();
-		attribute.name = "myName";
-		attribute.id = 20;
-		attribute.data = new double[] {1, 2, 3, 4};
+		File tmpFile = Files.createTempDirectory("nulls-test-").toFile();
+		tmpFile.deleteOnExit();
+		String canonicalPath = tmpFile.getCanonicalPath();
+		/* serializeNulls*/
+		try (N5Writer writer = createN5Writer(canonicalPath, new GsonBuilder().serializeNulls())) {
 
-		final String string = "a string";
-		final String emptyString = "";
-		final double[] darray = new double[] {0.1,0.2,0.3,0.4,0.5};
-		final int[] iarray = new int[] {1,2,3,4,5};
+			N5HDF5Writer h5 = (N5HDF5Writer)writer;
+			final Structured attribute = new Structured();
+			attribute.name = "myName";
+			attribute.id = 20;
+			attribute.data = new double[]{1, 2, 3, 4};
 
-		final JsonElement oElem = h5.getGson().toJsonTree( attribute );
-		final JsonElement sElem = h5.getGson().toJsonTree( string );
-		final JsonElement esElem = h5.getGson().toJsonTree( emptyString );
-		final JsonElement dElem = h5.getGson().toJsonTree( darray );
-		final JsonElement iElem = h5.getGson().toJsonTree( iarray );
+			final String string = "a string";
+			final String emptyString = "";
+			final double[] darray = new double[]{0.1, 0.2, 0.3, 0.4, 0.5};
+			final int[] iarray = new int[]{1, 2, 3, 4, 5};
 
-		n5.createGroup("/attributeTest");
-		n5.setAttribute("/attributeTest", "myAttribute", attribute);
-		n5.setAttribute("/attributeTest", "string", string );
-		n5.setAttribute("/attributeTest", "emptyString", emptyString );
-		n5.setAttribute("/attributeTest", "darray", darray );
-		n5.setAttribute("/attributeTest", "iarray", iarray );
+			final JsonElement oElem = h5.getGson().toJsonTree(attribute);
+			final JsonElement sElem = h5.getGson().toJsonTree(string);
+			final JsonElement esElem = h5.getGson().toJsonTree(emptyString);
+			final JsonElement dElem = h5.getGson().toJsonTree(darray);
+			final JsonElement iElem = h5.getGson().toJsonTree(iarray);
 
-		HashMap<String, JsonElement> attrs = h5.getAttributes( "/attributeTest" );
-		assertTrue( "has object attribute", attrs.containsKey("myAttribute") );
-		assertTrue( "has string attribute", attrs.containsKey("string") );
-		assertTrue( "has empty string attribute", attrs.containsKey("emptyString") );
-		assertTrue( "has d-array attribute", attrs.containsKey("darray") );
-		assertTrue( "has i-array attribute", attrs.containsKey("iarray") );
+			writer.createGroup("/attributeTest");
+			writer.setAttribute("/attributeTest", "myAttribute", attribute);
+			writer.setAttribute("/attributeTest", "string", string);
+			writer.setAttribute("/attributeTest", "emptyString", emptyString);
+			writer.setAttribute("/attributeTest", "darray", darray);
+			writer.setAttribute("/attributeTest", "iarray", iarray);
 
-		assertEquals("object elem", oElem, attrs.get("myAttribute"));
-		assertEquals("string elem", sElem, attrs.get("string"));
-		assertEquals("empty string elem", esElem, attrs.get("emptyString"));
-		assertEquals("double array elem", dElem, attrs.get("darray"));
-		assertEquals("int array elem", iElem, attrs.get("iarray"));
+			JsonElement attrs = h5.getAttributes("/attributeTest");
+			assertTrue(attrs.isJsonObject());
+			final JsonObject attrsObj = attrs.getAsJsonObject();
+			assertTrue("has object attribute", attrsObj.has("myAttribute"));
+			assertTrue("has string attribute", attrsObj.has("string"));
+			assertTrue("has empty string attribute", attrsObj.has("emptyString"));
+			assertTrue("has d-array attribute", attrsObj.has("darray"));
+			assertTrue("has i-array attribute", attrsObj.has("iarray"));
 
-		n5.remove("/attributeTest");
+			assertEquals("object elem", oElem, attrsObj.get("myAttribute"));
+			assertEquals("string elem", sElem, attrsObj.get("string"));
+			assertEquals("empty string elem", esElem, attrsObj.get("emptyString"));
+			assertEquals("double array elem", dElem, attrsObj.get("darray"));
+			assertEquals("int array elem", iElem, attrsObj.get("iarray"));
 
-		// ensure dataset attributes are mapped
-		long[] dims = new long[] {4,4};
-		int[] blkSz = new int[] {4,4};
-		RawCompression compression = new RawCompression();
+			writer.remove("/attributeTest");
 
-		n5.createDataset( "/datasetTest", dims, blkSz, DataType.UINT8, compression );
-		HashMap<String, JsonElement> dsetAttrs = h5.getAttributes( "/datasetTest" );
-		assertTrue( "dset has dimensions", dsetAttrs.containsKey( "dimensions" ));
-		assertTrue( "dset has blockSize", dsetAttrs.containsKey( "blockSize" ));
-		assertTrue( "dset has dataType", dsetAttrs.containsKey( "dataType" ));
-		assertTrue( "dset has compression", dsetAttrs.containsKey( "compression" ));
+			// ensure dataset attributes are mapped
+			long[] dims = new long[]{4, 4};
+			int[] blkSz = new int[]{4, 4};
+			RawCompression compression = new RawCompression();
 
-		final Gson gson = h5.getGson();
-		assertArrayEquals( "dset dimensions", dims, gson.fromJson( dsetAttrs.get( "dimensions" ), long[].class ));
-		assertArrayEquals( "dset blockSize", blkSz, gson.fromJson( dsetAttrs.get( "blockSize" ), int[].class ));
-		assertEquals( "dset dataType", DataType.UINT8, gson.fromJson( dsetAttrs.get( "dataType" ), DataType.class ));
+			writer.createDataset("/datasetTest", dims, blkSz, DataType.UINT8, compression);
+			JsonElement dsetAttrs = h5.getAttributes("/datasetTest");
+			assertTrue(dsetAttrs.isJsonObject());
+			final JsonObject dsetAttrsObj = dsetAttrs.getAsJsonObject();
+			assertTrue("dset has dimensions", dsetAttrsObj.has("dimensions"));
+			assertTrue("dset has blockSize", dsetAttrsObj.has("blockSize"));
+			assertTrue("dset has dataType", dsetAttrsObj.has("dataType"));
+			assertTrue("dset has compression", dsetAttrsObj.has("compression"));
 
-		n5.remove("/datasetTest");
+			final Gson gson = h5.getGson();
+			assertArrayEquals("dset dimensions", dims, gson.fromJson(dsetAttrsObj.get("dimensions"), long[].class));
+			assertArrayEquals("dset blockSize", blkSz, gson.fromJson(dsetAttrsObj.get("blockSize"), int[].class));
+			assertEquals("dset dataType", DataType.UINT8, gson.fromJson(dsetAttrsObj.get("dataType"), DataType.class));
+
+			writer.remove("/datasetTest");
+			writer.remove();
+		}
 	}
 
 	@Test
@@ -367,11 +399,12 @@ public class N5HDF5Test extends AbstractN5Test {
 	/*
 	 * Differs from AbstractN5Test since an int will be read back as int, not a long
 	 */
-	public void testListAttributes() {
+	public void testListAttributes() throws IOException, URISyntaxException {
 
-		final String groupName2 = groupName + "-2";
-		final String datasetName2 = datasetName + "-2";
-		try {
+		try (N5Writer n5 = createN5Writer()) {
+
+			final String groupName2 = groupName + "-2";
+			final String datasetName2 = datasetName + "-2";
 			n5.createDataset(datasetName2, dimensions, blockSize, DataType.UINT64, new RawCompression());
 			n5.setAttribute(datasetName2, "attr1", new double[] {1.1, 2.1, 3.1});
 			n5.setAttribute(datasetName2, "attr2", new String[] {"a", "b", "c"});
@@ -383,15 +416,15 @@ public class N5HDF5Test extends AbstractN5Test {
 			n5.setAttribute(datasetName2, "attr8", new Object[] {"1", 2, 3.1});
 
 			Map<String, Class<?>> attributesMap = n5.listAttributes(datasetName2);
-			Assert.assertTrue(attributesMap.get("attr1") == double[].class);
-			Assert.assertTrue(attributesMap.get("attr2") == String[].class);
-			Assert.assertTrue(attributesMap.get("attr3") == double.class);
-			Assert.assertTrue(attributesMap.get("attr4") == String.class);
-			Assert.assertTrue(attributesMap.get("attr5") == long[].class);
+			assertTrue(attributesMap.get("attr1") == double[].class);
+			assertTrue(attributesMap.get("attr2") == String[].class);
+			assertTrue(attributesMap.get("attr3") == double.class);
+			assertTrue(attributesMap.get("attr4") == String.class);
+			assertTrue(attributesMap.get("attr5") == long[].class);
 			//HDF5 will parse an int as an int rather than a long
-			Assert.assertTrue(attributesMap.get("attr6") == int.class);
-			Assert.assertTrue(attributesMap.get("attr7") == double[].class);
-			Assert.assertTrue(attributesMap.get("attr8") == Object[].class);
+			assertTrue(attributesMap.get("attr6") == int.class);
+			assertTrue(attributesMap.get("attr7") == double[].class);
+			assertTrue(attributesMap.get("attr8") == Object[].class);
 
 			n5.createGroup(groupName2);
 			n5.setAttribute(groupName2, "attr1", new double[] {1.1, 2.1, 3.1});
@@ -404,168 +437,15 @@ public class N5HDF5Test extends AbstractN5Test {
 			n5.setAttribute(groupName2, "attr8", new Object[] {"1", 2, 3.1});
 
 			attributesMap = n5.listAttributes(groupName2);
-			Assert.assertTrue(attributesMap.get("attr1") == double[].class);
-			Assert.assertTrue(attributesMap.get("attr2") == String[].class);
-			Assert.assertTrue(attributesMap.get("attr3") == double.class);
-			Assert.assertTrue(attributesMap.get("attr4") == String.class);
-			Assert.assertTrue(attributesMap.get("attr5") == long[].class);
+			assertTrue(attributesMap.get("attr1") == double[].class);
+			assertTrue(attributesMap.get("attr2") == String[].class);
+			assertTrue(attributesMap.get("attr3") == double.class);
+			assertTrue(attributesMap.get("attr4") == String.class);
+			assertTrue(attributesMap.get("attr5") == long[].class);
 			//HDF5 will parse an int as an int rather than a long
-			Assert.assertTrue(attributesMap.get("attr6") == int.class);
-			Assert.assertTrue(attributesMap.get("attr7") == double[].class);
-			Assert.assertTrue(attributesMap.get("attr8") == Object[].class);
-		} catch (final IOException e) {
-			fail(e.getMessage());
-		}
-	}
-	
-	@Override
-	@Test
-	public void testDeepList() {
-		try {
-
-			// clear container to start
-			n5.remove();
-			// create a new container since the above removes the file
-			n5 = createN5Writer();
-
-			n5.createGroup(groupName);
-			for (final String subGroup : subGroupNames)
-				n5.createGroup(groupName + "/" + subGroup);
-
-			final List<String> groupsList = Arrays.asList(n5.deepList("/"));
-			for (final String subGroup : subGroupNames)
-				Assert.assertTrue("deepList contents", groupsList.contains(groupName.replaceFirst("/", "") + "/" + subGroup));
-
-			for (final String subGroup : subGroupNames)
-				Assert.assertTrue("deepList contents", Arrays.asList(n5.deepList("")).contains(groupName.replaceFirst("/", "") + "/" + subGroup));
-
-			final DatasetAttributes datasetAttributes = new DatasetAttributes(dimensions, blockSize, DataType.UINT64, new RawCompression());
-			final LongArrayDataBlock dataBlock = new LongArrayDataBlock( blockSize, new long[]{0,0,0}, new long[blockNumElements] );
-			n5.createDataset(datasetName, datasetAttributes );
-			n5.writeBlock(datasetName, datasetAttributes, dataBlock);
-
-			final List<String> datasetList = Arrays.asList(n5.deepList("/"));
-			for (final String subGroup : subGroupNames)
-				Assert.assertTrue("deepList contents", datasetList.contains(groupName.replaceFirst("/", "") + "/" + subGroup));
-			Assert.assertFalse("deepList stops at datasets", datasetList.contains(datasetName + "/0"));
-
-			final List<String> datasetList2 = Arrays.asList(n5.deepList(""));
-			for (final String subGroup : subGroupNames)
-				Assert.assertTrue("deepList contents", datasetList2.contains(groupName.replaceFirst("/", "") + "/" + subGroup));
-			Assert.assertTrue("deepList contents", datasetList2.contains(datasetName.replaceFirst("/", "")));
-			Assert.assertFalse("deepList stops at datasets", datasetList2.contains(datasetName + "/0"));
-
-			final String prefix = "/test";
-			final String datasetSuffix = "group/dataset";
-			final List<String> datasetList3 = Arrays.asList(n5.deepList(prefix));
-			for (final String subGroup : subGroupNames)
-				Assert.assertTrue("deepList contents", datasetList3.contains("group/" + subGroup));
-			Assert.assertTrue("deepList contents", datasetList3.contains(datasetName.replaceFirst(prefix + "/", "")));
-
-			// parallel deepList tests
-			final List<String> datasetListP = Arrays.asList(n5.deepList("/", Executors.newFixedThreadPool(2)));
-			for (final String subGroup : subGroupNames)
-				Assert.assertTrue("deepList contents", datasetListP.contains(groupName.replaceFirst("/", "") + "/" + subGroup));
-			Assert.assertTrue("deepList contents", datasetListP.contains(datasetName.replaceFirst("/", "")));
-			Assert.assertFalse("deepList stops at datasets", datasetListP.contains(datasetName + "/0"));
-
-			final List<String> datasetListP2 = Arrays.asList(n5.deepList("", Executors.newFixedThreadPool(2)));
-			for (final String subGroup : subGroupNames)
-				Assert.assertTrue("deepList contents", datasetListP2.contains(groupName.replaceFirst("/", "") + "/" + subGroup));
-			Assert.assertTrue("deepList contents", datasetListP2.contains(datasetName.replaceFirst("/", "")));
-			Assert.assertFalse("deepList stops at datasets", datasetListP2.contains(datasetName + "/0"));
-
-			final List<String> datasetListP3 = Arrays.asList(n5.deepList(prefix, Executors.newFixedThreadPool(2)));
-			for (final String subGroup : subGroupNames)
-				Assert.assertTrue("deepList contents", datasetListP3.contains("group/" + subGroup));
-			Assert.assertTrue("deepList contents", datasetListP3.contains(datasetName.replaceFirst(prefix + "/", "")));
-			Assert.assertFalse("deepList stops at datasets", datasetListP3.contains(datasetName + "/0"));
-
-			// test filtering
-			final Predicate<String> isCalledDataset = d -> {
-				return d.endsWith("/dataset");
-			};
-			final Predicate<String> isBorC = d -> {
-				return d.matches(".*/[bc]$");
-			};
-
-			final List<String> datasetListFilter1 = Arrays.asList(n5.deepList(prefix, isCalledDataset));
-			Assert.assertTrue(
-					"deepList filter \"dataset\"",
-					datasetListFilter1.stream().map(x -> prefix + x).allMatch(isCalledDataset));
-
-			final List<String> datasetListFilter2 = Arrays.asList(n5.deepList(prefix, isBorC));
-			Assert.assertTrue(
-					"deepList filter \"b or c\"",
-					datasetListFilter2.stream().map(x -> prefix + x).allMatch(isBorC));
-
-			final List<String> datasetListFilterP1 =
-					Arrays.asList(n5.deepList(prefix, isCalledDataset, Executors.newFixedThreadPool(2)));
-			Assert.assertTrue(
-					"deepList filter \"dataset\"",
-					datasetListFilterP1.stream().map(x -> prefix + x).allMatch(isCalledDataset));
-
-			final List<String> datasetListFilterP2 =
-					Arrays.asList(n5.deepList(prefix, isBorC, Executors.newFixedThreadPool(2)));
-			Assert.assertTrue(
-					"deepList filter \"b or c\"",
-					datasetListFilterP2.stream().map(x -> prefix + x).allMatch(isBorC));
-
-			// test dataset filtering
-			final List<String> datasetListFilterD = Arrays.asList(n5.deepListDatasets(prefix));
-			Assert.assertTrue(
-					"deepListDataset",
-					datasetListFilterD.size() == 1 && (prefix + "/" + datasetListFilterD.get(0)).equals(datasetName));
-			Assert.assertArrayEquals(
-					datasetListFilterD.toArray(),
-					n5.deepList(
-							prefix,
-							a -> {
-								try { return n5.datasetExists(a); }
-								catch (final IOException e) { return false; }
-							}));
-
-			final List<String> datasetListFilterDandBC = Arrays.asList(n5.deepListDatasets(prefix, isBorC));
-			Assert.assertTrue("deepListDatasetFilter", datasetListFilterDandBC.size() == 0);
-			Assert.assertArrayEquals(
-					datasetListFilterDandBC.toArray(),
-					n5.deepList(
-							prefix,
-							a -> {
-								try { return n5.datasetExists(a) && isBorC.test(a); }
-								catch (final IOException e) { return false; }
-							}));
-
-			final List<String> datasetListFilterDP =
-					Arrays.asList(n5.deepListDatasets(prefix, Executors.newFixedThreadPool(2)));
-			Assert.assertTrue(
-					"deepListDataset Parallel",
-					datasetListFilterDP.size() == 1 && (prefix + "/" + datasetListFilterDP.get(0)).equals(datasetName));
-			Assert.assertArrayEquals(
-					datasetListFilterDP.toArray(),
-					n5.deepList(
-							prefix,
-							a -> {
-								try { return n5.datasetExists(a); }
-								catch (final IOException e) { return false; }
-							},
-							Executors.newFixedThreadPool(2)));
-
-			final List<String> datasetListFilterDandBCP =
-					Arrays.asList(n5.deepListDatasets(prefix, isBorC, Executors.newFixedThreadPool(2)));
-			Assert.assertTrue("deepListDatasetFilter Parallel", datasetListFilterDandBCP.size() == 0);
-			Assert.assertArrayEquals(
-					datasetListFilterDandBCP.toArray(),
-					n5.deepList(
-							prefix,
-							a -> {
-								try { return n5.datasetExists(a) && isBorC.test(a); }
-								catch (final IOException e) { return false; }
-							},
-							Executors.newFixedThreadPool(2)));
-
-		} catch (final IOException | InterruptedException | ExecutionException e) {
-			fail(e.getMessage());
+			assertTrue(attributesMap.get("attr6") == int.class);
+			assertTrue(attributesMap.get("attr7") == double[].class);
+			assertTrue(attributesMap.get("attr8") == Object[].class);
 		}
 	}
 }
