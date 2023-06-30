@@ -193,6 +193,34 @@ public class N5HDF5Test extends AbstractN5Test {
 
 	@Override
 	@Test
+	public void blockExistsTest() throws IOException, URISyntaxException {
+		/* Blocks always exist if the dataset exists (and they're in range) in HDF5,
+		 * 	since they are created when the dataset is created, and cannot be deleted */
+		try (N5Writer n5Writer = createN5Writer()) {
+			assertThrows(Exception.class, () -> n5Writer.blockExists("test", 0,0,0));
+			final DatasetAttributes datasetAttributes = new DatasetAttributes(
+					new long[]{10,10,10},
+					new int[]{2, 2, 2},
+					DataType.INT8,
+					new RawCompression()
+			);
+			n5Writer.createDataset("test", datasetAttributes);
+			assertTrue(n5Writer.blockExists("test", 0,0,0));
+			final IntArrayDataBlock dataBlock = new IntArrayDataBlock(
+					new int[]{2, 2, 2},
+					new long[]{0, 0, 0},
+					new int[]{0,1,2,3,4,5,6,6,7}
+			);
+			n5Writer.writeBlock("test", datasetAttributes, dataBlock);
+			assertTrue(n5Writer.blockExists("test", 0,0,0));
+			assertFalse(n5Writer.blockExists("test", 0,0,999));
+			n5Writer.deleteBlock("test", 0,0,0);
+			assertTrue(n5Writer.blockExists("test", 0,0,0));
+		}
+	}
+
+	@Override
+	@Test
 	public void testVersion() throws NumberFormatException, IOException, URISyntaxException {
 
 		try (N5Writer n5 = createN5Writer()) {

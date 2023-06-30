@@ -35,7 +35,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
-import com.google.gson.reflect.TypeToken;
 import hdf.hdf5lib.exceptions.HDF5Exception;
 import org.janelia.saalfeldlab.n5.Compression;
 import org.janelia.saalfeldlab.n5.Compression.CompressionType;
@@ -696,6 +695,25 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 			H5Sclose(memorySpaceId);
 		}
 		return block;
+	}
+
+	@Override
+	public boolean blockExists(String dataset, long... blockPosition) {
+		final DatasetAttributes datasetAttributes = getDatasetAttributes(dataset);
+		if (datasetAttributes == null) {
+			throw new N5IOException("No Dataset at " + dataset + ". Block cannot exist");
+		}
+		if (blockPosition.length > datasetAttributes.getNumDimensions()) return false;
+		final long[] dimensions = datasetAttributes.getDimensions();
+		final int[] blockSize = datasetAttributes.getBlockSize();
+		for (int i = 0; i < dimensions.length; i++) {
+			if (blockPosition[i] * blockSize[i] >= dimensions[i]) return false;
+		}
+		try {
+			return readBlock(dataset, datasetAttributes, blockPosition) != null;
+		} catch (Exception e) {
+			return false;
+		}
 	}
 
 	@Override
