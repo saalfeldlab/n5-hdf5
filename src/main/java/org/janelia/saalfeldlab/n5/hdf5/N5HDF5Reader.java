@@ -122,7 +122,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	 * @param defaultBlockSize  for all dimensions &gt; defaultBlockSize.length, and for all
 	 *                          dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *                          dataset will be used
-	 * @throws IOException the exception
+	 * @throws N5Exception if version is incompatible
 	 */
 	public N5HDF5Reader(
 			final IHDF5Reader reader,
@@ -160,12 +160,12 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	 * @param defaultBlockSize  for all dimensions &gt; defaultBlockSize.length, and for all
 	 *                          dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *                          dataset will be used
-	 * @throws IOException the exception
+	 * @throws N5Exception if version is incompatible
 	 */
 	public N5HDF5Reader(
 			final IHDF5Reader reader,
 			final boolean overrideBlockSize,
-			final int... defaultBlockSize) throws IOException {
+			final int... defaultBlockSize) throws N5Exception {
 
 		this(reader, overrideBlockSize, new GsonBuilder(), defaultBlockSize);
 	}
@@ -177,11 +177,11 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	 * @param defaultBlockSize for all dimensions &gt; defaultBlockSize.length, and for all
 	 *                         dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *                         dataset will be used
-	 * @throws IOException the exception
+	 * @throws N5Exception if version is incompatible
 	 */
 	public N5HDF5Reader(
 			final IHDF5Reader reader,
-			final int... defaultBlockSize) throws IOException {
+			final int... defaultBlockSize) throws N5Exception {
 
 		this(reader, false, defaultBlockSize);
 	}
@@ -197,13 +197,13 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	 * @param defaultBlockSize  for all dimensions &gt; defaultBlockSize.length, and for all
 	 *                          dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *                          dataset will be used
-	 * @throws IOException the exception
+	 * @throws N5Exception if a reader could not be opened, or has an incompatible version
 	 */
 	public N5HDF5Reader(
 			final String hdf5Path,
 			final boolean overrideBlockSize,
 			final GsonBuilder gsonBuilder,
-			final int... defaultBlockSize) {
+			final int... defaultBlockSize) throws N5Exception {
 
 		this(openHdf5Reader(hdf5Path), overrideBlockSize, gsonBuilder, defaultBlockSize);
 	}
@@ -218,12 +218,12 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	 * @param defaultBlockSize  for all dimensions &gt; defaultBlockSize.length, and for all
 	 *                          dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *                          dataset will be used
-	 * @throws IOException the exception
+	 * @throws N5Exception if a reader could not be opened, or has an incompatible version
 	 */
 	public N5HDF5Reader(
 			final String hdf5Path,
 			final boolean overrideBlockSize,
-			final int... defaultBlockSize) {
+			final int... defaultBlockSize) throws N5Exception {
 
 		this(hdf5Path, overrideBlockSize, new GsonBuilder(), defaultBlockSize);
 	}
@@ -235,11 +235,11 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	 * @param defaultBlockSize for all dimensions &gt; defaultBlockSize.length, and for all
 	 *                         dimensions with defaultBlockSize[i] &lt;= 0, the size of the
 	 *                         dataset will be used
-	 * @throws IOException the exception
+	 * @throws N5Exception if a reader could not be opened, or has an incompatible version
 	 */
 	public N5HDF5Reader(
 			final String hdf5Path,
-			final int... defaultBlockSize)  {
+			final int... defaultBlockSize) throws N5Exception {
 
 		this(hdf5Path, false, defaultBlockSize);
 	}
