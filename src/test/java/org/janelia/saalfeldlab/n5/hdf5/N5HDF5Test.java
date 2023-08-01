@@ -73,7 +73,14 @@ import ch.systemsx.cisd.hdf5.IHDF5Writer;
  */
 public class N5HDF5Test extends AbstractN5Test {
 
-	private static String testDirPath = System.getProperty("user.home") + "/tmp/n5-test.hdf5";
+	private static String testDirPath = createTestDirPath("n5-hdf5") + "/n5-test.hdf5";
+	private static String createTestDirPath(String dirName) {
+		try {
+			return Files.createTempDirectory(dirName).toString();
+		} catch (IOException exc) {
+			return System.getProperty("user.home") + "/tmp/" + dirName;
+		}
+	}
 	private static int[] defaultBlockSize = new int[]{5, 6, 7};
 	private static IHDF5Writer hdf5Writer;
 
