@@ -720,6 +720,8 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 		final String finalPathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
 
 		final HashMap<String, Class<?>> attributes = new HashMap<>();
+		if (!exists(normalizedPathName))
+			return attributes;
 
 		reader
 				.object()
