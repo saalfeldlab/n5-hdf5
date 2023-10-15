@@ -319,7 +319,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 		final String[] attributePathTokens = normalizedKey.split("/");
 		final boolean isPath =
 				attributePathTokens.length > 2
-						|| attributePathTokens.length > 1 && attributePathTokens[0].length() > 0
+						|| attributePathTokens.length > 1 && !attributePathTokens[0].isEmpty()
 						|| N5URI.ARRAY_INDEX.asPredicate().test(normalizedKey)
 						|| containsEscapeCharacters(normalizedKey);
 		if (isRoot || isPath ) {
