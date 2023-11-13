@@ -25,6 +25,7 @@
  */
 package org.janelia.saalfeldlab.n5.hdf5;
 
+import ch.systemsx.cisd.base.mdarray.MDArray;
 import ch.systemsx.cisd.hdf5.HDF5DataSetInformation;
 import ch.systemsx.cisd.hdf5.HDF5DataTypeInformation;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
@@ -49,6 +50,7 @@ import org.janelia.saalfeldlab.n5.N5Exception;
 import org.janelia.saalfeldlab.n5.N5Reader;
 import org.janelia.saalfeldlab.n5.N5URI;
 import org.janelia.saalfeldlab.n5.RawCompression;
+import org.janelia.saalfeldlab.n5.StringDataBlock;
 import org.janelia.saalfeldlab.n5.hdf5.N5HDF5Util.OpenDataSetCache;
 import org.janelia.saalfeldlab.n5.hdf5.N5HDF5Util.OpenDataSetCache.OpenDataSet;
 import org.scijava.util.VersionUtils;
@@ -60,6 +62,7 @@ import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.FileSystems;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -677,6 +680,12 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 
 		final long[] hdf5CroppedBlockSize = reorderToLong(croppedBlockSize);
 		reorder(hdf5Offset);
+
+		if (datasetAttributes.getDataType() == DataType.STRING) {
+			final int[] intHdf5CroppedBlockSize = Arrays.stream(hdf5CroppedBlockSize).mapToInt(i -> (int)i).toArray();
+			MDArray<String> data = reader.string().readMDArrayBlockWithOffset(normalizedPathName, intHdf5CroppedBlockSize, hdf5Offset);
+			return new StringDataBlock(croppedBlockSize, gridPosition, data.getAsFlatArray());
+		}
 
 		final DataType dataType = datasetAttributes.getDataType();
 		final long memTypeId;

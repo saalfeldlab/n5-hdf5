@@ -25,6 +25,7 @@
  */
 package org.janelia.saalfeldlab.n5.hdf5;
 
+import ch.systemsx.cisd.base.mdarray.MDArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
@@ -521,6 +522,12 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 
 		final long[] hdf5DataBlockSize = reorderToLong(dataBlock.getSize());
 		final long[] hdf5Offset = reorderMultiplyToLong(dataBlock.getGridPosition(), datasetAttributes.getBlockSize());
+
+		if (datasetAttributes.getDataType() == DataType.STRING) {
+			MDArray<String> arr = new MDArray<>((String[]) dataBlock.getData(), hdf5DataBlockSize);
+			writer.string().writeMDArrayBlockWithOffset(pathName, arr, hdf5Offset);
+			return;
+		}
 
 		try (OpenDataSet dataset = openDataSetCache.get(pathName)) {
 			final long memorySpaceId = H5Screate_simple(hdf5DataBlockSize.length, hdf5DataBlockSize, null);
