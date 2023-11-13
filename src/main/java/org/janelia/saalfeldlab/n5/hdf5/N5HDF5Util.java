@@ -27,7 +27,6 @@ import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_UINT16;
 import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_UINT32;
 import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_UINT64;
 import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_UINT8;
-import static hdf.hdf5lib.HDF5Constants.H5T_VLEN;
 
 final class N5HDF5Util {
 
@@ -57,7 +56,7 @@ final class N5HDF5Util {
 		case FLOAT64:
 			return H5T_NATIVE_DOUBLE;
 		case STRING:
-			return H5T_VLEN;
+			throw new IllegalStateException("MemTypeId for STRING is not defined and should not be queried.");
 		default:
 			throw new IllegalArgumentException();
 		}
