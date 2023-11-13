@@ -56,7 +56,7 @@ final class N5HDF5Util {
 			return H5T_NATIVE_FLOAT;
 		case FLOAT64:
 			return H5T_NATIVE_DOUBLE;
-		case VLENSTRING:
+		case STRING:
 			return H5T_VLEN;
 		default:
 			throw new IllegalArgumentException();

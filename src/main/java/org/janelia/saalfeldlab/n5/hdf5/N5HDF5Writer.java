@@ -273,7 +273,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 		case FLOAT64:
 			writer.float64().createMDArray(pathName, hdf5Dimensions, hdf5BlockSize, floatCompression);
 			break;
-		case VLENSTRING:
+		case STRING:
 			writer.string().createMDArrayVL(pathName, hdf5Dimensions, hdf5BlockSize, stringCompression);
 		default:
 			return;

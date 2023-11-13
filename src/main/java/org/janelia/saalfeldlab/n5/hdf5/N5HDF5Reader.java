@@ -561,7 +561,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 		else if (type.isAssignableFrom(float.class))
 			return DataType.FLOAT32;
 		else if (type.isAssignableFrom(String.class))
-			return DataType.VLENSTRING;
+			return DataType.STRING;
 
 		System.err.println("Datasets of type " + typeInfo + " not yet implemented.");
 		return null;
