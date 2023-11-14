@@ -11,7 +11,7 @@
 
 	<groupId>org.janelia.saalfeldlab</groupId>
 	<artifactId>n5-hdf5</artifactId>
-	<version>2.0.2-SNAPSHOT</version>
+	<version>2.1.0</version>
 
 	<name>N5 HDF5 Bindings</name>
 	<description>Best effort N5 implementation on HDF5 files.</description>
@@ -117,7 +117,7 @@
 	<scm>
 		<connection>scm:git:git://github.com/saalfeldlab/n5-hdf5</connection>
 		<developerConnection>scm:git:git@github.com:saalfeldlab/n5-hdf5</developerConnection>
-		<tag>HEAD</tag>
+		<tag>n5-hdf5-2.1.0</tag>
 		<url>https://github.com/saalfeldlab/n5-hdf5</url>
 	</scm>
 	<issueManagement>
