@@ -55,6 +55,8 @@ final class N5HDF5Util {
 			return H5T_NATIVE_FLOAT;
 		case FLOAT64:
 			return H5T_NATIVE_DOUBLE;
+		case STRING:
+			throw new IllegalStateException("MemTypeId for STRING is not defined and should not be queried.");
 		default:
 			throw new IllegalArgumentException();
 		}

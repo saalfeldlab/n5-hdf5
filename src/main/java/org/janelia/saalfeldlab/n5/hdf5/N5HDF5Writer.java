@@ -25,6 +25,7 @@
  */
 package org.janelia.saalfeldlab.n5.hdf5;
 
+import ch.systemsx.cisd.base.mdarray.MDArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
@@ -50,6 +51,7 @@ import com.google.gson.GsonBuilder;
 
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.HDF5FloatStorageFeatures;
+import ch.systemsx.cisd.hdf5.HDF5GenericStorageFeatures;
 import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;
 import ch.systemsx.cisd.hdf5.IHDF5Writer;
 import org.janelia.saalfeldlab.n5.hdf5.N5HDF5Util.OpenDataSetCache.OpenDataSet;
@@ -220,14 +222,17 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 		final HDF5IntStorageFeatures intCompression;
 		final HDF5IntStorageFeatures uintCompression;
 		final HDF5FloatStorageFeatures floatCompression;
+		final HDF5GenericStorageFeatures stringCompression;
 		if (compression instanceof RawCompression) {
 			floatCompression = HDF5FloatStorageFeatures.FLOAT_NO_COMPRESSION;
 			intCompression = HDF5IntStorageFeatures.INT_NO_COMPRESSION;
 			uintCompression = HDF5IntStorageFeatures.INT_NO_COMPRESSION_UNSIGNED;
+			stringCompression = HDF5GenericStorageFeatures.GENERIC_NO_COMPRESSION;
 		} else {
 			floatCompression = HDF5FloatStorageFeatures.FLOAT_SHUFFLE_DEFLATE;
 			intCompression = HDF5IntStorageFeatures.INT_AUTO_SCALING_DEFLATE;
 			uintCompression = HDF5IntStorageFeatures.INT_AUTO_SCALING_DEFLATE_UNSIGNED;
+			stringCompression = HDF5GenericStorageFeatures.GENERIC_DEFLATE;
 		}
 
 		if (writer.exists(pathName))
@@ -268,6 +273,9 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 			break;
 		case FLOAT64:
 			writer.float64().createMDArray(pathName, hdf5Dimensions, hdf5BlockSize, floatCompression);
+			break;
+		case STRING:
+			writer.string().createMDArrayVL(pathName, hdf5Dimensions, hdf5BlockSize, stringCompression);
 		default:
 			return;
 		}
@@ -312,7 +320,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 		final String[] attributePathTokens = normalizedKey.split("/");
 		final boolean isPath =
 				attributePathTokens.length > 2
-						|| attributePathTokens.length > 1 && attributePathTokens[0].length() > 0
+						|| attributePathTokens.length > 1 && !attributePathTokens[0].isEmpty()
 						|| N5URI.ARRAY_INDEX.asPredicate().test(normalizedKey)
 						|| containsEscapeCharacters(normalizedKey);
 		if (isRoot || isPath ) {
@@ -514,6 +522,12 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 
 		final long[] hdf5DataBlockSize = reorderToLong(dataBlock.getSize());
 		final long[] hdf5Offset = reorderMultiplyToLong(dataBlock.getGridPosition(), datasetAttributes.getBlockSize());
+
+		if (datasetAttributes.getDataType() == DataType.STRING) {
+			MDArray<String> arr = new MDArray<>((String[]) dataBlock.getData(), hdf5DataBlockSize);
+			writer.string().writeMDArrayBlockWithOffset(pathName, arr, hdf5Offset);
+			return;
+		}
 
 		try (OpenDataSet dataset = openDataSetCache.get(pathName)) {
 			final long memorySpaceId = H5Screate_simple(hdf5DataBlockSize.length, hdf5DataBlockSize, null);

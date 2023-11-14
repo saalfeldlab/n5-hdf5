@@ -20,6 +20,7 @@ package org.janelia.saalfeldlab.n5.hdf5;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
@@ -72,7 +73,7 @@ import ch.systemsx.cisd.hdf5.IHDF5Reader;
  */
 public class N5HDF5Test extends AbstractN5Test {
 
-	private static int[] defaultBlockSize = new int[]{5, 6, 7};
+	private static final int[] defaultBlockSize = new int[]{5, 6, 7};
 	public static class Structured {
 
 		public String name = "";
@@ -107,7 +108,7 @@ public class N5HDF5Test extends AbstractN5Test {
 		return Files.createTempFile("n5-hdf5-test-", ".hdf5").toFile().getCanonicalPath();
 	}
 
-	@Override protected N5HDF5Writer createN5Writer() throws IOException, URISyntaxException {
+	@Override protected N5HDF5Writer createN5Writer() throws IOException {
 
 		final String location = tempN5Location();
 		final String hdf5Path = resolveTestHdf5Path(location);
@@ -193,7 +194,7 @@ public class N5HDF5Test extends AbstractN5Test {
 
 	@Override
 	@Test
-	public void testVersion() throws NumberFormatException, IOException, URISyntaxException {
+	public void testVersion() throws NumberFormatException, IOException {
 
 		try (N5Writer n5 = createN5Writer()) {
 
@@ -214,7 +215,7 @@ public class N5HDF5Test extends AbstractN5Test {
 
 	@Override
 	@Test
-	public void testSetAttributeDoesntCreateGroup() throws IOException, URISyntaxException {
+	public void testSetAttributeDoesntCreateGroup() throws IOException {
 
 		try (final N5Writer writer = createN5Writer()) {
 			final String testGroup = "/group/should/not/exit";
@@ -225,7 +226,7 @@ public class N5HDF5Test extends AbstractN5Test {
 	}
 
 	@Test
-	public void testOverrideBlockSize() throws IOException, URISyntaxException {
+	public void testOverrideBlockSize() throws IOException {
 
 		try (N5Writer n5HDF5Writer = createN5Writer()) {
 			final String testFilePath = n5HDF5Writer.getURI().getPath();
@@ -246,7 +247,7 @@ public class N5HDF5Test extends AbstractN5Test {
 	}
 
 	@Test
-	public void testDefaultBlockSizeGetter() throws IOException, URISyntaxException {
+	public void testDefaultBlockSizeGetter() throws IOException {
 		// do not pass array
 		{
 			try (final N5HDF5Writer h5 = createN5Writer()) {
@@ -263,7 +264,7 @@ public class N5HDF5Test extends AbstractN5Test {
 	}
 
 	@Test
-	public void testOverrideBlockSizeGetter() throws IOException, URISyntaxException {
+	public void testOverrideBlockSizeGetter() throws IOException {
 		// default behavior
 		try (final N5HDF5Writer h5 = createN5Writer()) {
 			final String testFilePath = h5.getURI().getPath();
@@ -280,7 +281,7 @@ public class N5HDF5Test extends AbstractN5Test {
 	}
 
 	@Test
-	public void testFilenameGetter() throws IOException, URISyntaxException {
+	public void testFilenameGetter() throws IOException {
 
 		try (final N5HDF5Writer h5 = createN5Writer()) {
 			final String testFilePath = h5.getURI().getPath();
@@ -290,7 +291,7 @@ public class N5HDF5Test extends AbstractN5Test {
 	}
 
 	@Test
-	public void testStructuredAttributes() throws IOException, URISyntaxException {
+	public void testStructuredAttributes() throws IOException {
 
 		try (N5Writer n5 = createN5Writer()) {
 			final Structured attribute = new Structured();
@@ -399,7 +400,7 @@ public class N5HDF5Test extends AbstractN5Test {
 	/*
 	 * Differs from AbstractN5Test since an int will be read back as int, not a long
 	 */
-	public void testListAttributes() throws IOException, URISyntaxException {
+	public void testListAttributes() throws IOException {
 
 		try (N5Writer n5 = createN5Writer()) {
 
@@ -416,15 +417,15 @@ public class N5HDF5Test extends AbstractN5Test {
 			n5.setAttribute(datasetName2, "attr8", new Object[] {"1", 2, 3.1});
 
 			Map<String, Class<?>> attributesMap = n5.listAttributes(datasetName2);
-			assertTrue(attributesMap.get("attr1") == double[].class);
-			assertTrue(attributesMap.get("attr2") == String[].class);
-			assertTrue(attributesMap.get("attr3") == double.class);
-			assertTrue(attributesMap.get("attr4") == String.class);
-			assertTrue(attributesMap.get("attr5") == long[].class);
+			assertSame(attributesMap.get("attr1"), double[].class);
+			assertSame(attributesMap.get("attr2"), String[].class);
+			assertSame(attributesMap.get("attr3"), double.class);
+			assertSame(attributesMap.get("attr4"), String.class);
+			assertSame(attributesMap.get("attr5"), long[].class);
 			//HDF5 will parse an int as an int rather than a long
-			assertTrue(attributesMap.get("attr6") == int.class);
-			assertTrue(attributesMap.get("attr7") == double[].class);
-			assertTrue(attributesMap.get("attr8") == Object[].class);
+			assertSame(attributesMap.get("attr6"), int.class);
+			assertSame(attributesMap.get("attr7"), double[].class);
+			assertSame(attributesMap.get("attr8"), Object[].class);
 
 			n5.createGroup(groupName2);
 			n5.setAttribute(groupName2, "attr1", new double[] {1.1, 2.1, 3.1});
@@ -437,15 +438,15 @@ public class N5HDF5Test extends AbstractN5Test {
 			n5.setAttribute(groupName2, "attr8", new Object[] {"1", 2, 3.1});
 
 			attributesMap = n5.listAttributes(groupName2);
-			assertTrue(attributesMap.get("attr1") == double[].class);
-			assertTrue(attributesMap.get("attr2") == String[].class);
-			assertTrue(attributesMap.get("attr3") == double.class);
-			assertTrue(attributesMap.get("attr4") == String.class);
-			assertTrue(attributesMap.get("attr5") == long[].class);
+			assertSame(attributesMap.get("attr1"), double[].class);
+			assertSame(attributesMap.get("attr2"), String[].class);
+			assertSame(attributesMap.get("attr3"), double.class);
+			assertSame(attributesMap.get("attr4"), String.class);
+			assertSame(attributesMap.get("attr5"), long[].class);
 			//HDF5 will parse an int as an int rather than a long
-			assertTrue(attributesMap.get("attr6") == int.class);
-			assertTrue(attributesMap.get("attr7") == double[].class);
-			assertTrue(attributesMap.get("attr8") == Object[].class);
+			assertSame(attributesMap.get("attr6"), int.class);
+			assertSame(attributesMap.get("attr7"), double[].class);
+			assertSame(attributesMap.get("attr8"), Object[].class);
 		}
 	}
 }
