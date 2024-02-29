@@ -34,6 +34,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Random;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
@@ -73,6 +74,9 @@ import ch.systemsx.cisd.hdf5.IHDF5Reader;
  */
 public class N5HDF5Test extends AbstractN5Test {
 
+	private static final Random random = new Random();
+	private static final Path tmpdir = Paths.get(System.getProperty("java.io.tmpdir"));
+
 	private static final int[] defaultBlockSize = new int[]{5, 6, 7};
 	public static class Structured {
 
@@ -103,9 +107,21 @@ public class N5HDF5Test extends AbstractN5Test {
 				new GzipCompression()};
 	}
 
-	@Override protected String tempN5Location() throws IOException {
+	@Override
+	protected String tempN5Location() throws IOException {
 
-		return Files.createTempFile("n5-hdf5-test-", ".hdf5").toFile().getCanonicalPath();
+		// Can't use Files.createTempFile here because it creates an empty file
+		// and the N5HDF5Writer (used to) fail if pointed to an existing file that is not a valid hdf5 file
+
+		// return Files.createTempFile("n5-hdf5-test-", ".hdf5").toFile().getCanonicalPath();
+
+		String s = "n5-hdf5-test" + Long.toUnsignedString(random.nextLong()) + ".hdf5";
+		Path name = tmpdir.getFileSystem().getPath(s);
+		// the generated name should be a simple file name
+		if (name.getParent() != null)
+			throw new IllegalArgumentException("Invalid prefix or suffix");
+		return tmpdir.resolve(name).toString();
+
 	}
 
 	@Override protected N5HDF5Writer createN5Writer() throws IOException {
@@ -191,8 +207,6 @@ public class N5HDF5Test extends AbstractN5Test {
 		try (N5Writer n5 = createTempN5Writer()) {
 
 			final Version n5Version = n5.getVersion();
-
-			System.out.println(n5Version);
 
 			assertEquals(n5Version, N5HDF5Reader.VERSION);
 

@@ -3,6 +3,8 @@ package org.janelia.saalfeldlab.n5.hdf5;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 
 public class HDF5Utils {
@@ -14,6 +16,11 @@ public class HDF5Utils {
 		final File f = new File(path);
 		if (!f.exists() || !f.isFile())
 			return false;
+
+		try {
+			if (Files.size(Paths.get(path)) == 0)
+				return true;
+		} catch (IOException e) {}
 
 		try (final FileInputStream in = new FileInputStream(f)) {
 			final byte[] sig = new byte[8];
