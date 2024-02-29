@@ -465,6 +465,48 @@ public class N5HDF5Test extends AbstractN5Test {
 	}
 
 	@Test
+	public void testMatrixAttributes()
+	{
+		final float[][] fmtx = new float[][]{{0,1},{2,3}};
+		final double[][] dmtx = new double[][]{{0,1},{2,3}};
+		final byte[][] bmtx = new byte[][]{{0,1},{2,3}};
+		final int[][] imtx = new int[][]{{0,1},{2,3}};
+		final long[][] lmtx = new long[][]{{0,1},{2,3}};
+
+		try (N5Writer n5 = createTempN5Writer()) {
+			n5.createGroup( "mtx" );
+			n5.setAttribute( "mtx", "fmtx", fmtx );
+			n5.setAttribute( "mtx", "dmtx", dmtx );
+			n5.setAttribute( "mtx", "bmtx", bmtx );
+			n5.setAttribute( "mtx", "imtx", imtx );
+			n5.setAttribute( "mtx", "lmtx", lmtx );
+
+			final float[][] f = n5.getAttribute( "mtx", "fmtx", float[][].class );
+			final double[][] d = n5.getAttribute( "mtx", "dmtx", double[][].class );
+			final byte[][] b = n5.getAttribute( "mtx", "bmtx", byte[][].class );
+			final int[][] i = n5.getAttribute( "mtx", "imtx", int[][].class );
+			final long[][] l = n5.getAttribute( "mtx", "lmtx", long[][].class );
+
+			assertArrayEquals( fmtx[ 0 ], f[ 0 ], 1e-9f );
+			assertArrayEquals( fmtx[ 1 ], f[ 1 ], 1e-9f );
+
+			assertArrayEquals( dmtx[ 0 ], d[ 0 ], 1e-9 );
+			assertArrayEquals( dmtx[ 1 ], d[ 1 ], 1e-9 );
+
+			assertArrayEquals( bmtx[ 0 ], b[ 0 ] );
+			assertArrayEquals( bmtx[ 1 ], b[ 1 ] );
+
+			assertArrayEquals( imtx[ 0 ], i[ 0 ] );
+			assertArrayEquals( imtx[ 1 ], i[ 1 ] );
+
+			assertArrayEquals( lmtx[ 0 ], l[ 0 ] );
+			assertArrayEquals( lmtx[ 1 ], l[ 1 ] );
+
+		}
+	}
+
+	@Override
+	@Test
 	public void testWriterSeparation() {
 
 		try (N5HDF5Writer writer1 = (N5HDF5Writer)createTempN5Writer()) {
