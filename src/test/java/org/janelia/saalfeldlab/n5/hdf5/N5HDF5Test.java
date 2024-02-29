@@ -39,6 +39,7 @@ import java.util.Random;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import hdf.hdf5lib.exceptions.HDF5SymbolTableException;
+import org.apache.commons.io.FileUtils;
 import org.janelia.saalfeldlab.n5.AbstractN5Test;
 import org.janelia.saalfeldlab.n5.ByteArrayDataBlock;
 import org.janelia.saalfeldlab.n5.Compression;
@@ -55,6 +56,7 @@ import org.janelia.saalfeldlab.n5.N5Reader.Version;
 import org.janelia.saalfeldlab.n5.N5Writer;
 import org.janelia.saalfeldlab.n5.RawCompression;
 import org.janelia.saalfeldlab.n5.ShortArrayDataBlock;
+import org.junit.AfterClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -75,7 +77,24 @@ import ch.systemsx.cisd.hdf5.IHDF5Reader;
 public class N5HDF5Test extends AbstractN5Test {
 
 	private static final Random random = new Random();
-	private static final Path tmpdir = Paths.get(System.getProperty("java.io.tmpdir"));
+	private static final Path TEMP_DIR;
+
+	static {
+		try {
+			TEMP_DIR = Files.createTempDirectory("hdf5-tests-");
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@AfterClass
+	public static void deleteTempDirectory() throws IOException {
+
+		final File tempDir = TEMP_DIR.toFile();
+		if (tempDir.exists()) {
+			FileUtils.deleteDirectory(tempDir);
+		}
+	}
 
 	private static final int[] defaultBlockSize = new int[]{5, 6, 7};
 	public static class Structured {
@@ -110,17 +129,8 @@ public class N5HDF5Test extends AbstractN5Test {
 	@Override
 	protected String tempN5Location() throws IOException {
 
-		// Can't use Files.createTempFile here because it creates an empty file
-		// and the N5HDF5Writer (used to) fail if pointed to an existing file that is not a valid hdf5 file
-
-		// return Files.createTempFile("n5-hdf5-test-", ".hdf5").toFile().getCanonicalPath();
-
-		String s = "n5-hdf5-test" + Long.toUnsignedString(random.nextLong()) + ".hdf5";
-		Path name = tmpdir.getFileSystem().getPath(s);
-		// the generated name should be a simple file name
-		if (name.getParent() != null)
-			throw new IllegalArgumentException("Invalid prefix or suffix");
-		return tmpdir.resolve(name).toString();
+		String tmpFile = "n5-hdf5-test-" + Long.toUnsignedString(random.nextLong()) + ".hdf5";
+		return TEMP_DIR.resolve(tmpFile).toFile().getCanonicalPath();
 
 	}
 
@@ -135,8 +145,7 @@ public class N5HDF5Test extends AbstractN5Test {
 
 	@Override protected N5Writer createN5Writer(String location, GsonBuilder gson) throws IOException {
 
-		final N5HDF5Writer writer = new N5HDF5Writer(resolveTestHdf5Path(location), false, gson);
-		return writer;
+		return new N5HDF5Writer(resolveTestHdf5Path(location), false, gson);
 	}
 
 	@Override protected N5Reader createN5Reader(String location, GsonBuilder gson) throws IOException {
@@ -147,8 +156,7 @@ public class N5HDF5Test extends AbstractN5Test {
 	@Override
 	protected N5Writer createN5Writer(String location) throws IOException {
 
-		final N5HDF5Writer writer = new N5HDF5Writer(resolveTestHdf5Path(location));
-		return writer;
+		return new N5HDF5Writer(resolveTestHdf5Path(location));
 	}
 
 	private static String resolveTestHdf5Path(String location) throws IOException {
@@ -202,7 +210,7 @@ public class N5HDF5Test extends AbstractN5Test {
 
 	@Override
 	@Test
-	public void testVersion() throws NumberFormatException, IOException {
+	public void testVersion() throws NumberFormatException {
 
 		try (N5Writer n5 = createTempN5Writer()) {
 
@@ -232,7 +240,7 @@ public class N5HDF5Test extends AbstractN5Test {
 	}
 
 	@Test
-	public void testOverrideBlockSize() throws IOException {
+	public void testOverrideBlockSize() {
 
 		try (N5Writer n5HDF5Writer = createTempN5Writer()) {
 			final String testFilePath = n5HDF5Writer.getURI().getPath();
@@ -270,7 +278,7 @@ public class N5HDF5Test extends AbstractN5Test {
 	}
 
 	@Test
-	public void testOverrideBlockSizeGetter() throws IOException {
+	public void testOverrideBlockSizeGetter() {
 		// default behavior
 		try (final N5HDF5Writer h5 = (N5HDF5Writer)createTempN5Writer()) {
 			final String testFilePath = h5.getURI().getPath();
@@ -287,7 +295,7 @@ public class N5HDF5Test extends AbstractN5Test {
 	}
 
 	@Test
-	public void testFilenameGetter() throws IOException {
+	public void testFilenameGetter() {
 
 		try (final N5HDF5Writer h5 = (N5HDF5Writer)createTempN5Writer()) {
 			final String testFilePath = h5.getURI().getPath();
@@ -297,7 +305,7 @@ public class N5HDF5Test extends AbstractN5Test {
 	}
 
 	@Test
-	public void testStructuredAttributes() throws IOException {
+	public void testStructuredAttributes() {
 
 		try (N5Writer n5 = createTempN5Writer()) {
 			final Structured attribute = new Structured();
