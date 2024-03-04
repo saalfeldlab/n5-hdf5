@@ -31,7 +31,10 @@ import com.google.gson.JsonParser;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
@@ -605,15 +608,20 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 
 	private static IHDF5Writer openHdf5Writer(String hdf5Path) {
 
+		Path pathFromUri =  null;
+		try {
+			pathFromUri = Paths.get(new URI(hdf5Path).getSchemeSpecificPart());
+		} catch (URISyntaxException e1) {
+			throw new N5Exception("Provided uri is not valid: " + hdf5Path, e1);
+		}
 
-		if (Files.exists(Paths.get(hdf5Path)) && !HDF5Utils.isHDF5(hdf5Path)) {
+		if (Files.exists(pathFromUri) && !HDF5Utils.isHDF5(pathFromUri.toString())) {
 			throw new N5Exception("File exists at " + hdf5Path + " and is not a valid HDF5 file");
 		}
 
 		try {
 			return HDF5Factory.open(normalizeHdf5PathLocation(hdf5Path));
-		} catch (HDF5Exception e) {
-			throw new N5IOException("Cannot open HDF5 Writer", new IOException(e));
+		} catch (HDF5Exception e) { throw new N5IOException("Cannot open HDF5 Writer", new IOException(e));
 		}
 	}
 }
