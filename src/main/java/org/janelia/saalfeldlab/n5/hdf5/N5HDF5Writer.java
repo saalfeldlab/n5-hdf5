@@ -26,17 +26,14 @@
 package org.janelia.saalfeldlab.n5.hdf5;
 
 import ch.systemsx.cisd.base.mdarray.MDArray;
+import ch.systemsx.cisd.hdf5.HDF5Factory;
+import ch.systemsx.cisd.hdf5.HDF5FloatStorageFeatures;
+import ch.systemsx.cisd.hdf5.HDF5GenericStorageFeatures;
+import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;
+import ch.systemsx.cisd.hdf5.IHDF5Writer;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import hdf.hdf5lib.exceptions.HDF5Exception;
 import org.janelia.saalfeldlab.n5.Compression;
 import org.janelia.saalfeldlab.n5.DataBlock;
@@ -48,15 +45,15 @@ import org.janelia.saalfeldlab.n5.N5Exception;
 import org.janelia.saalfeldlab.n5.N5URI;
 import org.janelia.saalfeldlab.n5.N5Writer;
 import org.janelia.saalfeldlab.n5.RawCompression;
-
-import com.google.gson.GsonBuilder;
-
-import ch.systemsx.cisd.hdf5.HDF5Factory;
-import ch.systemsx.cisd.hdf5.HDF5FloatStorageFeatures;
-import ch.systemsx.cisd.hdf5.HDF5GenericStorageFeatures;
-import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;
-import ch.systemsx.cisd.hdf5.IHDF5Writer;
 import org.janelia.saalfeldlab.n5.hdf5.N5HDF5Util.OpenDataSetCache.OpenDataSet;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import static hdf.hdf5lib.H5.H5Dget_space;
 import static hdf.hdf5lib.H5.H5Dwrite;
@@ -65,7 +62,7 @@ import static hdf.hdf5lib.H5.H5Screate_simple;
 import static hdf.hdf5lib.H5.H5Sselect_hyperslab;
 import static hdf.hdf5lib.HDF5Constants.H5P_DEFAULT;
 import static hdf.hdf5lib.HDF5Constants.H5S_SELECT_SET;
-import static org.janelia.saalfeldlab.n5.N5Exception.*;
+import static org.janelia.saalfeldlab.n5.N5Exception.N5IOException;
 import static org.janelia.saalfeldlab.n5.hdf5.N5HDF5Util.reorderMultiplyToLong;
 import static org.janelia.saalfeldlab.n5.hdf5.N5HDF5Util.reorderToLong;
 
@@ -593,13 +590,13 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 
 	private static IHDF5Writer openHdf5Writer(String hdf5Path) {
 
-
-		if (Files.exists(Paths.get(hdf5Path)) && !HDF5Utils.isHDF5(hdf5Path)) {
-			throw new N5Exception("File exists at " + hdf5Path + " and is not a valid HDF5 file");
+		final String normalHdf5Path = normalizeHdf5PathLocation(hdf5Path);
+		if (Files.exists(Paths.get(normalHdf5Path)) && !HDF5Utils.isHDF5(normalHdf5Path)) {
+			throw new N5Exception("File exists at " + normalHdf5Path + " and is not a valid HDF5 file");
 		}
 
 		try {
-			return HDF5Factory.open(normalizeHdf5PathLocation(hdf5Path));
+			return HDF5Factory.open(normalHdf5Path);
 		} catch (HDF5Exception e) {
 			throw new N5IOException("Cannot open HDF5 Writer", new IOException(e));
 		}
