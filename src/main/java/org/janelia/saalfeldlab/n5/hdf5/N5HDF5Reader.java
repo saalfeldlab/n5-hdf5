@@ -62,6 +62,7 @@ import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.FileSystems;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -283,7 +284,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 
 	protected static String normalizeHdf5PathLocation(String hdf5Path) {
 		try {
-			return FILE_SYSTEM_KEY_VALUE_ACCESS.uri(hdf5Path).getPath();
+			return Paths.get(FILE_SYSTEM_KEY_VALUE_ACCESS.uri(hdf5Path)).toString();
 		} catch (URISyntaxException e) {
 			return hdf5Path;
 		}
