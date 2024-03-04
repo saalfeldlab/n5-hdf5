@@ -3,6 +3,10 @@ package org.janelia.saalfeldlab.n5.hdf5;
 import ch.systemsx.cisd.hdf5.IHDF5FileLevelReadOnlyHandler;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
 import ch.systemsx.cisd.hdf5.hdf5lib.HDFHelper;
+import hdf.hdf5lib.H5;
+import hdf.hdf5lib.HDF5Constants;
+import hdf.hdf5lib.exceptions.HDF5LibraryException;
+import hdf.hdf5lib.structs.H5O_info_t;
 import java.io.File;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -16,6 +20,7 @@ import static hdf.hdf5lib.H5.H5Fopen;
 import static hdf.hdf5lib.H5.H5Pclose;
 import static hdf.hdf5lib.H5.H5open;
 import static hdf.hdf5lib.HDF5Constants.H5F_ACC_RDONLY;
+import static hdf.hdf5lib.HDF5Constants.H5O_TYPE_DATASET;
 import static hdf.hdf5lib.HDF5Constants.H5P_DEFAULT;
 import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_DOUBLE;
 import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_FLOAT;
@@ -155,10 +160,15 @@ final class N5HDF5Util {
 
 		private boolean datasetExists(String pathName) {
 
-			if (pathName.equals(""))
-				pathName = "/";
+			if ("".equals(pathName) || "/".equals(pathName))
+				return false;
 
-			return reader.exists(pathName) && reader.object().isDataSet(pathName);
+			try {
+				final H5O_info_t info = H5.H5Oget_info_by_name(fileId, pathName, HDF5Constants.H5O_INFO_BASIC, HDF5Constants.H5P_DEFAULT);
+				return info.type == H5O_TYPE_DATASET;
+			} catch (HDF5LibraryException e) {
+				return false;
+			}
 		}
 
 		public synchronized OpenDataSet get(final String pathName) {

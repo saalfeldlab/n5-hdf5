@@ -34,10 +34,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Random;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import hdf.hdf5lib.exceptions.HDF5SymbolTableException;
+import org.apache.commons.io.FileUtils;
 import org.janelia.saalfeldlab.n5.AbstractN5Test;
 import org.janelia.saalfeldlab.n5.ByteArrayDataBlock;
 import org.janelia.saalfeldlab.n5.Compression;
@@ -54,6 +56,7 @@ import org.janelia.saalfeldlab.n5.N5Reader.Version;
 import org.janelia.saalfeldlab.n5.N5Writer;
 import org.janelia.saalfeldlab.n5.RawCompression;
 import org.janelia.saalfeldlab.n5.ShortArrayDataBlock;
+import org.junit.AfterClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -72,6 +75,26 @@ import ch.systemsx.cisd.hdf5.IHDF5Reader;
  * @author John Bogovic
  */
 public class N5HDF5Test extends AbstractN5Test {
+
+	private static final Random random = new Random();
+	private static final Path TEMP_DIR;
+
+	static {
+		try {
+			TEMP_DIR = Files.createTempDirectory("hdf5-tests-");
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@AfterClass
+	public static void deleteTempDirectory() throws IOException {
+
+		final File tempDir = TEMP_DIR.toFile();
+		if (tempDir.exists()) {
+			FileUtils.deleteDirectory(tempDir);
+		}
+	}
 
 	private static final int[] defaultBlockSize = new int[]{5, 6, 7};
 	public static class Structured {
@@ -103,9 +126,12 @@ public class N5HDF5Test extends AbstractN5Test {
 				new GzipCompression()};
 	}
 
-	@Override protected String tempN5Location() throws IOException {
+	@Override
+	protected String tempN5Location() throws IOException {
 
-		return Files.createTempFile("n5-hdf5-test-", ".hdf5").toFile().getCanonicalPath();
+		String tmpFile = "n5-hdf5-test-" + Long.toUnsignedString(random.nextLong()) + ".hdf5";
+		return TEMP_DIR.resolve(tmpFile).toFile().getCanonicalPath();
+
 	}
 
 	@Override protected N5HDF5Writer createN5Writer() throws IOException {
@@ -114,21 +140,12 @@ public class N5HDF5Test extends AbstractN5Test {
 		final String hdf5Path = resolveTestHdf5Path(location);
 		Files.deleteIfExists(Paths.get(location));
 		Files.deleteIfExists(Paths.get(hdf5Path));
-		final N5HDF5Writer writer = new N5HDF5Writer(hdf5Path, false, new GsonBuilder()) {
-
-			@Override public void close() {
-
-				super.close();
-				assertTrue(remove());
-			}
-		};
-		return writer;
+		return new N5HDF5Writer(hdf5Path, false, new GsonBuilder());
 	}
 
 	@Override protected N5Writer createN5Writer(String location, GsonBuilder gson) throws IOException {
 
-		final N5HDF5Writer writer = new N5HDF5Writer(resolveTestHdf5Path(location), false, gson);
-		return writer;
+		return new N5HDF5Writer(resolveTestHdf5Path(location), false, gson);
 	}
 
 	@Override protected N5Reader createN5Reader(String location, GsonBuilder gson) throws IOException {
@@ -139,8 +156,7 @@ public class N5HDF5Test extends AbstractN5Test {
 	@Override
 	protected N5Writer createN5Writer(String location) throws IOException {
 
-		final N5HDF5Writer writer = new N5HDF5Writer(resolveTestHdf5Path(location));
-		return writer;
+		return new N5HDF5Writer(resolveTestHdf5Path(location));
 	}
 
 	private static String resolveTestHdf5Path(String location) throws IOException {
@@ -194,13 +210,11 @@ public class N5HDF5Test extends AbstractN5Test {
 
 	@Override
 	@Test
-	public void testVersion() throws NumberFormatException, IOException {
+	public void testVersion() throws NumberFormatException {
 
-		try (N5Writer n5 = createN5Writer()) {
+		try (N5Writer n5 = createTempN5Writer()) {
 
 			final Version n5Version = n5.getVersion();
-
-			System.out.println(n5Version);
 
 			assertEquals(n5Version, N5HDF5Reader.VERSION);
 
@@ -215,9 +229,9 @@ public class N5HDF5Test extends AbstractN5Test {
 
 	@Override
 	@Test
-	public void testSetAttributeDoesntCreateGroup() throws IOException {
+	public void testSetAttributeDoesntCreateGroup() {
 
-		try (final N5Writer writer = createN5Writer()) {
+		try (final N5Writer writer = createTempN5Writer()) {
 			final String testGroup = "/group/should/not/exit";
 			assertFalse(writer.exists(testGroup));
 			assertThrows(HDF5SymbolTableException.class, () -> writer.setAttribute(testGroup, "test", "test"));
@@ -226,9 +240,9 @@ public class N5HDF5Test extends AbstractN5Test {
 	}
 
 	@Test
-	public void testOverrideBlockSize() throws IOException {
+	public void testOverrideBlockSize() {
 
-		try (N5Writer n5HDF5Writer = createN5Writer()) {
+		try (N5Writer n5HDF5Writer = createTempN5Writer()) {
 			final String testFilePath = n5HDF5Writer.getURI().getPath();
 			final DatasetAttributes attributes = new DatasetAttributes(dimensions, blockSize, DataType.INT8, new GzipCompression());
 			n5HDF5Writer.createDataset(datasetName, attributes);
@@ -250,7 +264,7 @@ public class N5HDF5Test extends AbstractN5Test {
 	public void testDefaultBlockSizeGetter() throws IOException {
 		// do not pass array
 		{
-			try (final N5HDF5Writer h5 = createN5Writer()) {
+			try (final N5HDF5Writer h5 = (N5HDF5Writer)createTempN5Writer()) {
 				assertArrayEquals(new int[]{}, h5.getDefaultBlockSizeCopy());
 			}
 		}
@@ -264,9 +278,9 @@ public class N5HDF5Test extends AbstractN5Test {
 	}
 
 	@Test
-	public void testOverrideBlockSizeGetter() throws IOException {
+	public void testOverrideBlockSizeGetter() {
 		// default behavior
-		try (final N5HDF5Writer h5 = createN5Writer()) {
+		try (final N5HDF5Writer h5 = (N5HDF5Writer)createTempN5Writer()) {
 			final String testFilePath = h5.getURI().getPath();
 			assertFalse(h5.doesOverrideBlockSize());
 			// overrideBlockSize == false
@@ -281,9 +295,9 @@ public class N5HDF5Test extends AbstractN5Test {
 	}
 
 	@Test
-	public void testFilenameGetter() throws IOException {
+	public void testFilenameGetter() {
 
-		try (final N5HDF5Writer h5 = createN5Writer()) {
+		try (final N5HDF5Writer h5 = (N5HDF5Writer)createTempN5Writer()) {
 			final String testFilePath = h5.getURI().getPath();
 			assertEquals(new File(testFilePath), h5.getFilename());
 		}
@@ -291,9 +305,9 @@ public class N5HDF5Test extends AbstractN5Test {
 	}
 
 	@Test
-	public void testStructuredAttributes() throws IOException {
+	public void testStructuredAttributes() {
 
-		try (N5Writer n5 = createN5Writer()) {
+		try (N5Writer n5 = createTempN5Writer()) {
 			final Structured attribute = new Structured();
 			attribute.name = "myName";
 			attribute.id = 20;
@@ -400,9 +414,9 @@ public class N5HDF5Test extends AbstractN5Test {
 	/*
 	 * Differs from AbstractN5Test since an int will be read back as int, not a long
 	 */
-	public void testListAttributes() throws IOException {
+	public void testListAttributes() {
 
-		try (N5Writer n5 = createN5Writer()) {
+		try (N5Writer n5 = createTempN5Writer()) {
 
 			final String groupName2 = groupName + "-2";
 			final String datasetName2 = datasetName + "-2";
@@ -447,6 +461,65 @@ public class N5HDF5Test extends AbstractN5Test {
 			assertSame(attributesMap.get("attr6"), int.class);
 			assertSame(attributesMap.get("attr7"), double[].class);
 			assertSame(attributesMap.get("attr8"), Object[].class);
+		}
+	}
+
+	@Test
+	public void testMatrixAttributes()
+	{
+		final float[][] fmtx = new float[][]{{0,1},{2,3}};
+		final double[][] dmtx = new double[][]{{0,1},{2,3}};
+		final byte[][] bmtx = new byte[][]{{0,1},{2,3}};
+		final int[][] imtx = new int[][]{{0,1},{2,3}};
+		final long[][] lmtx = new long[][]{{0,1},{2,3}};
+
+		try (N5Writer n5 = createTempN5Writer()) {
+			n5.createGroup( "mtx" );
+			n5.setAttribute( "mtx", "fmtx", fmtx );
+			n5.setAttribute( "mtx", "dmtx", dmtx );
+			n5.setAttribute( "mtx", "bmtx", bmtx );
+			n5.setAttribute( "mtx", "imtx", imtx );
+			n5.setAttribute( "mtx", "lmtx", lmtx );
+
+			final float[][] f = n5.getAttribute( "mtx", "fmtx", float[][].class );
+			final double[][] d = n5.getAttribute( "mtx", "dmtx", double[][].class );
+			final byte[][] b = n5.getAttribute( "mtx", "bmtx", byte[][].class );
+			final int[][] i = n5.getAttribute( "mtx", "imtx", int[][].class );
+			final long[][] l = n5.getAttribute( "mtx", "lmtx", long[][].class );
+
+			assertArrayEquals( fmtx[ 0 ], f[ 0 ], 1e-9f );
+			assertArrayEquals( fmtx[ 1 ], f[ 1 ], 1e-9f );
+
+			assertArrayEquals( dmtx[ 0 ], d[ 0 ], 1e-9 );
+			assertArrayEquals( dmtx[ 1 ], d[ 1 ], 1e-9 );
+
+			assertArrayEquals( bmtx[ 0 ], b[ 0 ] );
+			assertArrayEquals( bmtx[ 1 ], b[ 1 ] );
+
+			assertArrayEquals( imtx[ 0 ], i[ 0 ] );
+			assertArrayEquals( imtx[ 1 ], i[ 1 ] );
+
+			assertArrayEquals( lmtx[ 0 ], l[ 0 ] );
+			assertArrayEquals( lmtx[ 1 ], l[ 1 ] );
+
+		}
+	}
+
+	@Override
+	@Test
+	public void testWriterSeparation() {
+
+		try (N5HDF5Writer writer1 = (N5HDF5Writer)createTempN5Writer()) {
+			try (N5HDF5Writer writer2 = (N5HDF5Writer)createTempN5Writer()) {
+
+				assertTrue(writer1.exists("/"));
+				assertTrue(writer2.exists("/"));
+
+				assertTrue(writer1.remove());
+				assertTrue(writer2.exists("/"));
+
+				assertTrue(writer2.remove());
+			}
 		}
 	}
 }
