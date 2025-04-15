@@ -305,7 +305,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 
 		/* Any key that looks like an attribute path is treated as one;
 		 *	The only exception are top level elements with a single leading `/` */
-		final String normalizedAttrPath = N5URI.normalizeAttributePath(key);
+		final String normalizedAttrPath = N5URI.normalizeAttributePath(key).replaceFirst("^/", "");
 		final String normalizedKey = normalizedAttrPath.isEmpty() ? "/" : normalizedAttrPath;
 
 		if (writer.object().hasAttribute(finalPathName, normalizedKey)) {

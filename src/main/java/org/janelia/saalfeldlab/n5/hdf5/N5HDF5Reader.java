@@ -269,7 +269,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 			final List<String> members = reader.object().getGroupMembers(pathName);
 			return members.toArray(new String[members.size()]);
 		} catch (final Exception e) {
-			throw new N5Exception(e);
+			throw new N5IOException(e);
 		}
 	}
 
@@ -302,7 +302,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 		final String normalizedPathName = N5URI.normalizeGroupPath(pathName);
 		pathName = normalizedPathName.isEmpty() ? "/" : normalizedPathName;
 
-		final String normalizedAttrPath = N5URI.normalizeAttributePath(key);
+		final String normalizedAttrPath = N5URI.normalizeAttributePath(key).replaceFirst("^/", "");
 		final String normalizedKey = normalizedAttrPath.isEmpty() ? "/" : normalizedAttrPath;
 
 		if (!reader.exists(pathName))
