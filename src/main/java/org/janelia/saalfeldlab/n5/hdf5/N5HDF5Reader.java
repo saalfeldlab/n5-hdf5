@@ -250,6 +250,13 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 		return gson;
 	}
 
+	@Override public String getAttributesKey() {
+
+		throw new UnsupportedOperationException("HDF5 does not support separate attributes key");
+	}
+
+
+
 	@Override
 	public boolean exists(String pathName) {
 

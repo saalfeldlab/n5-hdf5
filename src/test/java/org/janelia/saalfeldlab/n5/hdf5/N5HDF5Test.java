@@ -20,6 +20,8 @@ package org.janelia.saalfeldlab.n5.hdf5;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -73,6 +75,7 @@ import ch.systemsx.cisd.hdf5.IHDF5Reader;
  * @author Igor Pisarev
  * @author Philipp Hanslovsky
  * @author John Bogovic
+ * @author Caleb Hulbert
  */
 public class N5HDF5Test extends AbstractN5Test {
 
@@ -188,24 +191,9 @@ public class N5HDF5Test extends AbstractN5Test {
 	}
 
 	@Override
-	protected boolean testDeleteIsBlockDeleted(final DataBlock<?> dataBlock) {
-
-		// deletion is not supported in HDF5, so the block is overwritten with zeroes instead
-
-		if (dataBlock instanceof ByteArrayDataBlock)
-			return Arrays.equals((byte[]) dataBlock.getData(), new byte[dataBlock.getNumElements()]);
-		else if (dataBlock instanceof ShortArrayDataBlock)
-			return Arrays.equals((short[]) dataBlock.getData(), new short[dataBlock.getNumElements()]);
-		else if (dataBlock instanceof IntArrayDataBlock)
-			return Arrays.equals((int[]) dataBlock.getData(), new int[dataBlock.getNumElements()]);
-		else if (dataBlock instanceof LongArrayDataBlock)
-			return Arrays.equals((long[]) dataBlock.getData(), new long[dataBlock.getNumElements()]);
-		else if (dataBlock instanceof FloatArrayDataBlock)
-			return Arrays.equals((float[]) dataBlock.getData(), new float[dataBlock.getNumElements()]);
-		else if (dataBlock instanceof DoubleArrayDataBlock)
-			return Arrays.equals((double[]) dataBlock.getData(), new double[dataBlock.getNumElements()]);
-
-		return false;
+	@Test
+	@Ignore("Writing blocks larger than the dimensions of the dataset is invalid for HDF5.")
+	public void testBlocksLargerThanDimensions() {
 	}
 
 	@Override
@@ -520,6 +508,45 @@ public class N5HDF5Test extends AbstractN5Test {
 
 				assertTrue(writer2.remove());
 			}
+		}
+	}
+
+	@Override
+	@Test
+	public void testDelete() {
+
+		try (N5Writer n5 = createTempN5Writer()) {
+			final String datasetName = AbstractN5Test.datasetName + "-test-delete";
+			n5.createDataset(datasetName, dimensions, blockSize, DataType.UINT8, new RawCompression());
+			final DatasetAttributes attributes = n5.getDatasetAttributes(datasetName);
+			final long[] position1 = {0, 0, 0};
+			final long[] position2 = {0, 1, 2};
+
+			// non-existant block should be zeros
+			final DataBlock<?> emptyBlock = n5.readBlock(datasetName, attributes, position1);
+			assertTrue(emptyBlock instanceof ByteArrayDataBlock);
+			final byte[] zeros = new byte[byteBlock.length];
+			assertArrayEquals(zeros, ((ByteArrayDataBlock)emptyBlock).getData());
+
+			final ByteArrayDataBlock dataBlock = new ByteArrayDataBlock(blockSize, position1, byteBlock);
+			n5.writeBlock(datasetName, attributes, dataBlock);
+
+			// block should exist at position1 but not at position2
+			final DataBlock<?> readBlock = n5.readBlock(datasetName, attributes, position1);
+			assertNotNull(readBlock);
+			assertTrue(readBlock instanceof ByteArrayDataBlock);
+			assertArrayEquals(byteBlock, ((ByteArrayDataBlock)readBlock).getData());
+
+			assertTrue("deleting existing block should return true", n5.deleteBlock(datasetName, position1));
+			assertTrue("hdf5 returns true even on non-existent blocks, since they can only be zeroed out", n5.deleteBlock(datasetName, position1));
+			assertTrue("hdf5 returns true even on non-existent blocks, since they can only be zeroed out", n5.deleteBlock(datasetName, position2));
+
+			// no block should exist anymore
+			final DataBlock<?> pos1EmptyBlock = n5.readBlock(datasetName, attributes, position1);
+			assertArrayEquals(zeros, ((ByteArrayDataBlock)pos1EmptyBlock).getData());
+
+			final DataBlock<?> pos2EmptyBlock = n5.readBlock(datasetName, attributes, position2);
+			assertArrayEquals(zeros, ((ByteArrayDataBlock)pos2EmptyBlock).getData());
 		}
 	}
 }
