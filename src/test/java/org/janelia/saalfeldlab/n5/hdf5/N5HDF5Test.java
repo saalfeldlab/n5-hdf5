@@ -232,7 +232,7 @@ public class N5HDF5Test extends AbstractN5Test {
 
 		try (N5Writer n5HDF5Writer = createTempN5Writer()) {
 			final String testFilePath = n5HDF5Writer.getURI().getPath();
-			final DatasetAttributes attributes = new DatasetAttributes(dimensions, blockSize, DataType.INT8, new GzipCompression());
+			final DatasetAttributes attributes = n5HDF5Writer.createDatasetAttributes(dimensions, blockSize, DataType.INT8, new GzipCompression());
 			n5HDF5Writer.createDataset(datasetName, attributes);
 
 			final IHDF5Reader hdf5Reader = HDF5Factory.openForReading(testFilePath);

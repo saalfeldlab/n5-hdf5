@@ -681,7 +681,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 			}
 		}
 
-		return new DatasetAttributes(
+		return new HDF5DatasetAttributes(
 				dimensions,
 				blockSize,
 				getDataType(datasetInfo),
