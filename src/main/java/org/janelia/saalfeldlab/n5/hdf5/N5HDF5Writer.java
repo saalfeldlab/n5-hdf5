@@ -553,6 +553,138 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 	}
 
 	@Override
+	public <T> void writeRegion(
+			final String datasetPath,
+			final DatasetAttributes datasetAttributes,
+			final long[] min,
+			final long[] size,
+			final DataBlockSupplier<T> dataBlocks,
+			final boolean writeFully) throws N5Exception {
+
+		// For HDF5 (no sharding support), iterate through blocks in the region
+		// and write each one using writeBlock
+		final int n = min.length;
+		final int[] blockSize = datasetAttributes.getBlockSize();
+
+		// Compute min and max block grid positions
+		final long[] minBlock = new long[n];
+		final long[] maxBlock = new long[n];
+		for (int d = 0; d < n; ++d) {
+			minBlock[d] = min[d] / blockSize[d];
+			maxBlock[d] = (min[d] + size[d] - 1) / blockSize[d];
+		}
+
+		// Iterate through all blocks in the region
+		final long[] gridPosition = minBlock.clone();
+		while (true) {
+			// Check if we need to read existing data for this block
+			final DataBlock<T> existingBlock;
+			if (writeFully) {
+				existingBlock = null;
+			} else {
+				// Check if block is fully contained in the region
+				boolean fullyContained = true;
+				for (int d = 0; d < n; ++d) {
+					final long blockStart = gridPosition[d] * blockSize[d];
+					final long blockEnd = blockStart + blockSize[d];
+					if (blockStart < min[d] || blockEnd > min[d] + size[d]) {
+						fullyContained = false;
+						break;
+					}
+				}
+				@SuppressWarnings("unchecked")
+				final DataBlock<T> readBlockUnchecked = (DataBlock<T>) readBlock(datasetPath, datasetAttributes, gridPosition);
+				existingBlock = fullyContained ? null : readBlockUnchecked;
+			}
+
+			// Get the new block from the supplier
+			final DataBlock<T> dataBlock = dataBlocks.get(gridPosition, existingBlock);
+			if (dataBlock != null) {
+				writeBlock(datasetPath, datasetAttributes, dataBlock);
+			}
+
+			// Increment grid position
+			int d = 0;
+			for (; d < n; ++d) {
+				if (gridPosition[d] < maxBlock[d]) {
+					gridPosition[d]++;
+					break;
+				}
+				gridPosition[d] = minBlock[d];
+			}
+			if (d == n) break; // Done iterating
+		}
+	}
+
+	@Override
+	public <T> void writeRegion(
+			final String datasetPath,
+			final DatasetAttributes datasetAttributes,
+			final long[] min,
+			final long[] size,
+			final DataBlockSupplier<T> dataBlocks,
+			final boolean writeFully,
+			final java.util.concurrent.ExecutorService executor) throws N5Exception {
+
+		// For HDF5 (no sharding support), iterate through blocks in the region
+		// and write each one using writeBlock, parallelized with executor
+		final int n = min.length;
+		final int[] blockSize = datasetAttributes.getBlockSize();
+
+		// Compute min and max block grid positions
+		final long[] minBlock = new long[n];
+		final long[] maxBlock = new long[n];
+		for (int d = 0; d < n; ++d) {
+			minBlock[d] = min[d] / blockSize[d];
+			maxBlock[d] = (min[d] + size[d] - 1) / blockSize[d];
+		}
+
+		// Iterate through all blocks in the region and submit tasks to executor
+		final long[] gridPosition = minBlock.clone();
+		while (true) {
+			final long[] currentGridPosition = gridPosition.clone();
+			executor.submit(() -> {
+				// Check if we need to read existing data for this block
+				final DataBlock<T> existingBlock;
+				if (writeFully) {
+					existingBlock = null;
+				} else {
+					// Check if block is fully contained in the region
+					boolean fullyContained = true;
+					for (int d = 0; d < n; ++d) {
+						final long blockStart = currentGridPosition[d] * blockSize[d];
+						final long blockEnd = blockStart + blockSize[d];
+						if (blockStart < min[d] || blockEnd > min[d] + size[d]) {
+							fullyContained = false;
+							break;
+						}
+					}
+					@SuppressWarnings("unchecked")
+					final DataBlock<T> readBlockUnchecked = (DataBlock<T>) readBlock(datasetPath, datasetAttributes, currentGridPosition);
+					existingBlock = fullyContained ? null : readBlockUnchecked;
+				}
+
+				// Get the new block from the supplier (must be thread-safe)
+				final DataBlock<T> dataBlock = dataBlocks.get(currentGridPosition, existingBlock);
+				if (dataBlock != null) {
+					writeBlock(datasetPath, datasetAttributes, dataBlock);
+				}
+			});
+
+			// Increment grid position
+			int d = 0;
+			for (; d < n; ++d) {
+				if (gridPosition[d] < maxBlock[d]) {
+					gridPosition[d]++;
+					break;
+				}
+				gridPosition[d] = minBlock[d];
+			}
+			if (d == n) break; // Done iterating
+		}
+	}
+
+	@Override
 	public boolean deleteBlock(String pathName, final long... gridPosition) throws N5Exception {
 
 		// deletion is not supported in HDF5, so the block is overwritten with zeroes instead
