@@ -739,7 +739,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	@Override
 	public boolean shardExists(String pathName, DatasetAttributes datasetAttributes, long... gridPosition) throws N5Exception {
 
-		return readBlock(pathName, datasetAttributes, gridPosition) != null;
+		return true;
 	}
 
 	@Override
