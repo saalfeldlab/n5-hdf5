@@ -213,7 +213,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 	}
 
 	@Override
-	public void createDataset(
+	public DatasetAttributes createDataset(
 			final String pathName,
 			final DatasetAttributes datasetAttributes) throws N5Exception {
 
@@ -276,9 +276,12 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 			break;
 		case STRING:
 			writer.string().createMDArrayVL(pathName, hdf5Dimensions, hdf5BlockSize, stringCompression);
+			break;
 		default:
-			return;
+			break;
 		}
+
+		return datasetAttributes;
 	}
 
 	@Override
@@ -555,13 +558,24 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 	@Override
 	public boolean deleteBlock(String pathName, final long... gridPosition) throws N5Exception {
 
-		// deletion is not supported in HDF5, so the block is overwritten with zeroes instead
-
 		if (pathName.equals(""))
 			pathName = "/";
 
 		final DatasetAttributes datasetAttributes = getDatasetAttributes(pathName);
+		return deleteBlock(pathName, datasetAttributes, gridPosition);
+	}
+
+	@Override
+	public boolean deleteBlock(String datasetPath, DatasetAttributes datasetAttributes, long... gridPosition) throws N5Exception {
+
+		// deletion is not supported in HDF5, so the block is overwritten with zeros instead
+		// Consider using defaultValue instead of zero?
+
+		if (datasetPath.equals(""))
+			datasetPath = "/";
+
 		final DataType dataType = datasetAttributes.getDataType();
+
 		switch (dataType) {
 			case UINT8:
 			case INT8:
@@ -574,7 +588,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 			case FLOAT32:
 			case FLOAT64:
 				final DataBlock<?> empty = dataType.createDataBlock(datasetAttributes.getBlockSize(), gridPosition);
-				writeBlock(pathName, datasetAttributes, empty);
+				writeBlock(datasetPath, datasetAttributes, empty);
 				return true;
 			default:
 				return false;
@@ -614,4 +628,5 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 			throw new N5IOException("Cannot open HDF5 Writer", new IOException(e));
 		}
 	}
+
 }

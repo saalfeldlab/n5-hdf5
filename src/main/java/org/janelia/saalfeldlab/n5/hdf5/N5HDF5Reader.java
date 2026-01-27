@@ -737,6 +737,12 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	}
 
 	@Override
+	public boolean shardExists(String pathName, DatasetAttributes datasetAttributes, long... gridPosition) throws N5Exception {
+
+		return readBlock(pathName, datasetAttributes, gridPosition) != null;
+	}
+
+	@Override
 	public boolean datasetExists(String pathName) {
 
 		final String normalizedPathName = N5URI.normalizeGroupPath(pathName);
@@ -847,4 +853,5 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 
 		return String.format("%s[file=%s]", getClass().getSimpleName(), reader.file().getFile());
 	}
+
 }
