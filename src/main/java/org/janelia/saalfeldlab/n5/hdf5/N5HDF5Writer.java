@@ -555,6 +555,15 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 		}
 	}
 
+	public <T> void writeShard(
+			final String pathName,
+			final DatasetAttributes datasetAttributes,
+			final DataBlock<T> dataBlock) throws N5Exception {
+
+		// HDF5 does not support sharding, so readShard is always equivalent to readBlock
+		writeBlock(pathName, datasetAttributes, dataBlock);
+	}
+
 	@Override
 	public boolean deleteBlock(String pathName, final long... gridPosition) throws N5Exception {
 

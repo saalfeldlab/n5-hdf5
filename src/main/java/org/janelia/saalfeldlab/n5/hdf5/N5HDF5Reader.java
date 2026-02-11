@@ -94,7 +94,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 
 	protected static final String N5_JSON_ROOT_KEY = "N5_JSON_ROOT";
 
-	protected static final FileSystemKeyValueAccess FILE_SYSTEM_KEY_VALUE_ACCESS = new FileSystemKeyValueAccess(FileSystems.getDefault());
+	protected static final FileSystemKeyValueAccess FILE_SYSTEM_KEY_VALUE_ACCESS = new FileSystemKeyValueAccess();
 
 	/**
 	 * SemVer version of this N5-HDF5 spec.
@@ -734,6 +734,16 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 			H5Sclose(memorySpaceId);
 		}
 		return block;
+	}
+
+	@Override
+	public DataBlock<?> readShard(
+			final String pathName,
+			final DatasetAttributes datasetAttributes,
+			final long... gridPosition) throws N5Exception {
+
+		// HDF5 does not support sharding, so readShard is always equivalent to readBlock
+		return readBlock(pathName, datasetAttributes, gridPosition);
 	}
 
 	@Override
