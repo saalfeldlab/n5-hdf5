@@ -689,7 +689,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	}
 
 	@Override
-	public DataBlock<?> readBlock(
+	public DataBlock<?> readChunk(
 			String pathName,
 			final DatasetAttributes datasetAttributes,
 			final long... gridPosition) throws N5Exception {
@@ -737,17 +737,17 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	}
 
 	@Override
-	public DataBlock<?> readShard(
+	public DataBlock<?> readBlock(
 			final String pathName,
 			final DatasetAttributes datasetAttributes,
 			final long... gridPosition) throws N5Exception {
 
-		// HDF5 does not support sharding, so readShard is always equivalent to readBlock
-		return readBlock(pathName, datasetAttributes, gridPosition);
+		// HDF5 does not support sharding, so readBlock is always equivalent to readChunk
+		return readChunk(pathName, datasetAttributes, gridPosition);
 	}
 
 	@Override
-	public boolean shardExists(String pathName, DatasetAttributes datasetAttributes, long... gridPosition) throws N5Exception {
+	public boolean blockExists(String pathName, DatasetAttributes datasetAttributes, long... gridPosition) throws N5Exception {
 
 		return true;
 	}

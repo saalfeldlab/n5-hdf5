@@ -522,30 +522,30 @@ public class N5HDF5Test extends AbstractN5Test {
 			final long[] position1 = {0, 0, 0};
 			final long[] position2 = {0, 1, 2};
 
-			// non-existant block should be zeros
-			final DataBlock<?> emptyBlock = n5.readBlock(datasetName, attributes, position1);
+			// non-existant chunk should be zeros
+			final DataBlock<?> emptyBlock = n5.readChunk(datasetName, attributes, position1);
 			assertTrue(emptyBlock instanceof ByteArrayDataBlock);
 			final byte[] zeros = new byte[byteBlock.length];
 			assertArrayEquals(zeros, ((ByteArrayDataBlock)emptyBlock).getData());
 
 			final ByteArrayDataBlock dataBlock = new ByteArrayDataBlock(blockSize, position1, byteBlock);
-			n5.writeBlock(datasetName, attributes, dataBlock);
+			n5.writeChunk(datasetName, attributes, dataBlock);
 
-			// block should exist at position1 but not at position2
-			final DataBlock<?> readBlock = n5.readBlock(datasetName, attributes, position1);
+			// chunk should exist at position1 but not at position2
+			final DataBlock<?> readBlock = n5.readChunk(datasetName, attributes, position1);
 			assertNotNull(readBlock);
 			assertTrue(readBlock instanceof ByteArrayDataBlock);
 			assertArrayEquals(byteBlock, ((ByteArrayDataBlock)readBlock).getData());
 
-			assertTrue("deleting existing block should return true", n5.deleteBlock(datasetName, position1));
-			assertTrue("hdf5 returns true even on non-existent blocks, since they can only be zeroed out", n5.deleteBlock(datasetName, position1));
-			assertTrue("hdf5 returns true even on non-existent blocks, since they can only be zeroed out", n5.deleteBlock(datasetName, position2));
+			assertTrue("deleting existing chunk should return true", n5.deleteChunk(datasetName, position1));
+			assertTrue("hdf5 returns true even on non-existent chunks, since they can only be zeroed out", n5.deleteChunk(datasetName, position1));
+			assertTrue("hdf5 returns true even on non-existent chunks, since they can only be zeroed out", n5.deleteChunk(datasetName, position2));
 
-			// no block should exist anymore
-			final DataBlock<?> pos1EmptyBlock = n5.readBlock(datasetName, attributes, position1);
+			// no chunk should exist anymore
+			final DataBlock<?> pos1EmptyBlock = n5.readChunk(datasetName, attributes, position1);
 			assertArrayEquals(zeros, ((ByteArrayDataBlock)pos1EmptyBlock).getData());
 
-			final DataBlock<?> pos2EmptyBlock = n5.readBlock(datasetName, attributes, position2);
+			final DataBlock<?> pos2EmptyBlock = n5.readChunk(datasetName, attributes, position2);
 			assertArrayEquals(zeros, ((ByteArrayDataBlock)pos2EmptyBlock).getData());
 		}
 	}

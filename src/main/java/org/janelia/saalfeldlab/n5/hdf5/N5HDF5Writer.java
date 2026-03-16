@@ -527,7 +527,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 	}
 
 	@Override
-	public <T> void writeBlock(
+	public <T> void writeChunk(
 			String pathName,
 			final DatasetAttributes datasetAttributes,
 			final DataBlock<T> dataBlock) throws N5Exception {
@@ -555,29 +555,30 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 		}
 	}
 
-	public <T> void writeShard(
+	@Override
+	public <T> void writeBlock(
 			final String pathName,
 			final DatasetAttributes datasetAttributes,
 			final DataBlock<T> dataBlock) throws N5Exception {
 
-		// HDF5 does not support sharding, so readShard is always equivalent to readBlock
-		writeBlock(pathName, datasetAttributes, dataBlock);
+		// HDF5 does not support sharding, so writeBlock is always equivalent to writeChunk
+		writeChunk(pathName, datasetAttributes, dataBlock);
 	}
 
 	@Override
-	public boolean deleteBlock(String pathName, final long... gridPosition) throws N5Exception {
+	public boolean deleteChunk(String pathName, final long... gridPosition) throws N5Exception {
 
 		if (pathName.equals(""))
 			pathName = "/";
 
 		final DatasetAttributes datasetAttributes = getDatasetAttributes(pathName);
-		return deleteBlock(pathName, datasetAttributes, gridPosition);
+		return deleteChunk(pathName, datasetAttributes, gridPosition);
 	}
 
 	@Override
-	public boolean deleteBlock(String datasetPath, DatasetAttributes datasetAttributes, long... gridPosition) throws N5Exception {
+	public boolean deleteChunk(String datasetPath, DatasetAttributes datasetAttributes, long... gridPosition) throws N5Exception {
 
-		// deletion is not supported in HDF5, so the block is overwritten with zeros instead
+		// deletion is not supported in HDF5, so the chunk is overwritten with zeros instead
 		// Consider using defaultValue instead of zero?
 
 		if (datasetPath.equals(""))
@@ -597,7 +598,7 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 			case FLOAT32:
 			case FLOAT64:
 				final DataBlock<?> empty = dataType.createDataBlock(datasetAttributes.getBlockSize(), gridPosition);
-				writeBlock(datasetPath, datasetAttributes, empty);
+				writeChunk(datasetPath, datasetAttributes, empty);
 				return true;
 			default:
 				return false;
