@@ -606,6 +606,20 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 	}
 
 	@Override
+	public boolean deleteBlock(String pathName, final long... gridPosition) throws N5Exception {
+
+		// HDF5 does not support sharding, so deleteBlock is always equivalent to deleteChunk
+		return deleteChunk(pathName, gridPosition);
+	}
+
+	@Override
+	public boolean deleteBlock(String datasetPath, DatasetAttributes datasetAttributes, long... gridPosition) throws N5Exception {
+
+		// HDF5 does not support sharding, so deleteBlock is always equivalent to deleteChunk
+		return deleteChunk(datasetPath, datasetAttributes, gridPosition);
+	}
+
+	@Override
 	public boolean remove() {
 
 		openDataSetCache.close();
