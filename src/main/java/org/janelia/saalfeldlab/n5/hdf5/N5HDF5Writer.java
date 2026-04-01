@@ -47,6 +47,9 @@ import org.janelia.saalfeldlab.n5.N5URI;
 import org.janelia.saalfeldlab.n5.N5Writer;
 import org.janelia.saalfeldlab.n5.RawCompression;
 import org.janelia.saalfeldlab.n5.hdf5.N5HDF5Util.OpenDataSetCache.OpenDataSet;
+import org.janelia.saalfeldlab.n5.shard.Nesting.NestedGrid;
+import org.janelia.saalfeldlab.n5.shard.Nesting.NestedPosition;
+import org.janelia.saalfeldlab.n5.shard.Region;
 
 import java.io.File;
 import java.io.IOException;
@@ -55,6 +58,8 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 
 import static hdf.hdf5lib.H5.H5Dget_space;
 import static hdf.hdf5lib.H5.H5Dwrite;
@@ -563,6 +568,50 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 
 		// HDF5 does not support sharding, so writeBlock is always equivalent to writeChunk
 		writeChunk(pathName, datasetAttributes, dataBlock);
+	}
+
+	@Override
+	public <T> void writeRegion(
+			String datasetPath,
+			DatasetAttributes datasetAttributes,
+			long[] min,
+			long[] size,
+			DataBlockSupplier<T> dataBlocks,
+			boolean writeFully) throws N5Exception {
+
+		final NestedGrid grid = datasetAttributes.getNestedBlockGrid();
+		final Region region = new Region(min, size, grid);
+		for (long[] key : Region.gridPositions(region.minPos().key(), region.maxPos().key())) {
+			final NestedPosition pos = grid.nestedPosition(key, 0); // HDF5 is never nested, get level 0
+			final long[] gridPosition = pos.absolute(0);
+			final DataBlock<T> existingDataBlock = writeFully || region.fullyContains(pos)
+					? null
+					: readBlock(datasetPath, datasetAttributes, gridPosition);
+			final DataBlock<T> dataBlock = dataBlocks.get(gridPosition, existingDataBlock);
+			// null blocks may be provided when they contain only the fill value
+			// and only non-empty blocks should be written, for example
+			if (dataBlock == null) {
+				deleteBlock(datasetPath, datasetAttributes, gridPosition);
+			} else {
+				writeBlock(datasetPath, datasetAttributes, dataBlock);
+			}
+		}
+
+	}
+
+	public <T> void writeRegion(
+			String datasetPath,
+	DatasetAttributes datasetAttributes,
+			long[] min,
+			long[] size,
+			DataBlockSupplier<T> dataBlocks,
+			boolean writeFully,
+			ExecutorService exec) throws N5Exception, InterruptedException, ExecutionException {
+
+		// block until the write is complete
+		exec.submit(() ->  {
+			writeRegion(datasetPath, datasetAttributes, min, size, dataBlocks, writeFully);
+		}).get();
 	}
 
 	@Override
