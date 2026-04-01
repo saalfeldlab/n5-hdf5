@@ -689,7 +689,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 	}
 
 	@Override
-	public DataBlock<?> readChunk(
+	public <T> DataBlock<T> readChunk(
 			String pathName,
 			final DatasetAttributes datasetAttributes,
 			final long... gridPosition) throws N5Exception {
@@ -713,7 +713,7 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 		if (datasetAttributes.getDataType() == DataType.STRING) {
 			final int[] intHdf5CroppedBlockSize = Arrays.stream(hdf5CroppedBlockSize).mapToInt(i -> (int)i).toArray();
 			MDArray<String> data = reader.string().readMDArrayBlockWithOffset(normalizedPathName, intHdf5CroppedBlockSize, hdf5Offset);
-			return new StringDataBlock(croppedBlockSize, gridPosition, data.getAsFlatArray());
+			return (DataBlock<T>)new StringDataBlock(croppedBlockSize, gridPosition, data.getAsFlatArray());
 		}
 
 		final DataType dataType = datasetAttributes.getDataType();
@@ -733,17 +733,17 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 			H5Sclose(fileSpaceId);
 			H5Sclose(memorySpaceId);
 		}
-		return block;
+		return (DataBlock<T>)block;
 	}
 
 	@Override
-	public DataBlock<?> readBlock(
+	public <T> DataBlock<T> readBlock(
 			final String pathName,
 			final DatasetAttributes datasetAttributes,
 			final long... gridPosition) throws N5Exception {
 
 		// HDF5 does not support sharding, so readBlock is always equivalent to readChunk
-		return readChunk(pathName, datasetAttributes, gridPosition);
+		return (DataBlock<T>)readChunk(pathName, datasetAttributes, gridPosition);
 	}
 
 	@Override
