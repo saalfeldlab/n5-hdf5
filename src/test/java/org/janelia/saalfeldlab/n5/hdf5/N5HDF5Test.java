@@ -192,6 +192,12 @@ public class N5HDF5Test extends AbstractN5Test {
 
 	@Override
 	@Test
+	@Ignore("HDF5 does not support modifying dataset attributes after creating the dataset.")
+	public void testDatasetAttributes() {
+	}
+
+	@Override
+	@Test
 	@Ignore("Writing blocks larger than the dimensions of the dataset is invalid for HDF5.")
 	public void testBlocksLargerThanDimensions() {
 	}
