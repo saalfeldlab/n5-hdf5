@@ -140,12 +140,9 @@
 		<license.skipUpdateLicense>true</license.skipUpdateLicense>
 		<license.skipUpdateProjectLicense>true</license.skipUpdateProjectLicense>
 
-		<scijava.jvm.version>8</scijava.jvm.version>
-		<scijava.jvm.build.version>[1.8.0-101,)</scijava.jvm.build.version>
-
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
-		<n5.version>4.0.0</n5.version>
+		<n5.version>4.0.3-SNAPSHOT</n5.version>
 	</properties>
 
 	<dependencies>
