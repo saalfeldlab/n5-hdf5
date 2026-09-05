@@ -3,7 +3,10 @@ package org.janelia.saalfeldlab.n5.hdf5;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 
+import org.janelia.saalfeldlab.n5.Compression;
+import org.janelia.saalfeldlab.n5.CompressionAdapter;
 import org.janelia.saalfeldlab.n5.ContainerDialect;
+import org.janelia.saalfeldlab.n5.DataType;
 import org.janelia.saalfeldlab.n5.DatasetAttributes;
 import org.janelia.saalfeldlab.n5.HierarchyStore;
 import org.janelia.saalfeldlab.n5.N5Dialect;
@@ -68,17 +71,33 @@ public class Hdf5Dialect implements ContainerDialect {
 	 * {@inheritDoc}
 	 * <p>
 	 * If the passed {@code store} is not a {@link Hdf5HierarchyStore} a {@link
-	 * N5Dialect} is returned as a fall-back, keeping {@code Gson} of this
-	 * dialect. (This is intended to work with n5-universe's {@code
-	 * TranslatedN5Reader} which wraps the delegate store, losing the additional
-	 * HDF5-specific methods of {@code Hdf5HierarchyStore} in the process.)
+	 * N5Dialect} is returned as a fall-back. (This is intended to work with
+	 * n5-universe's {@code TranslatedN5Reader} which wraps the delegate store,
+	 * losing the additional HDF5-specific methods of {@code Hdf5HierarchyStore}
+	 * in the process.)
+	 * <p>
+	 * NB: The fall-back does <em>not</em> keep the {@code Gson} of this dialect
+	 * as-is. This dialect derives {@code DatasetAttributes} directly from the
+	 * HDF5 dataset, so its {@code Gson} carries no n5 type adapters.
+	 * A {@code N5Dialect} does deserialize them ({@code gson.fromJson(...,
+	 * DatasetAttributes.class)}), and without the adapters Gson falls back to
+	 * reflection.
 	 */
 	@Override
 	public ContainerDialect withStore(final HierarchyStore store) {
 
 		return store instanceof Hdf5HierarchyStore
 				? new Hdf5Dialect((Hdf5HierarchyStore)store, gson)
-				: new N5Dialect(store, gson);
+				: new N5Dialect(store, withN5TypeAdapters(gson));
+	}
+
+	private static Gson withN5TypeAdapters(final Gson gson) {
+
+		return gson.newBuilder()
+				.registerTypeAdapter(DataType.class, new DataType.JsonAdapter())
+				.registerTypeHierarchyAdapter(Compression.class, CompressionAdapter.getJsonAdapter())
+				.registerTypeHierarchyAdapter(DatasetAttributes.class, DatasetAttributes.getJsonAdapter())
+				.create();
 	}
 
 	// ┌───────────────────────────────────────────────────────────────────────┐
