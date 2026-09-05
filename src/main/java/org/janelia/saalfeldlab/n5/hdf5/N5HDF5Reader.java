@@ -20,6 +20,7 @@ import org.janelia.saalfeldlab.n5.DataType;
 import org.janelia.saalfeldlab.n5.DatasetAttributes;
 import org.janelia.saalfeldlab.n5.GsonN5Reader;
 import org.janelia.saalfeldlab.n5.N5Exception;
+import org.janelia.saalfeldlab.n5.N5KeyValueReader;
 import org.janelia.saalfeldlab.n5.N5Reader;
 import org.janelia.saalfeldlab.n5.N5URI;
 import org.janelia.saalfeldlab.n5.StringDataBlock;
@@ -206,10 +207,19 @@ public class N5HDF5Reader implements GsonN5Reader, Closeable {
 		return containerDialect;
 	}
 
+	/**
+	 * Returns "attributes.json".
+	 * <p>
+	 * This is for compatibility with N5. In {@code n5-universe}, a {@code
+	 * TranslatedN5Reader} can be constructed on to of a {@code N5HDF5Reader}.
+	 * This uses N5 dialect and should report the matching attributes filename
+	 * for that.
+	 */
+	@Deprecated
 	@Override
 	public String getAttributesKey() {
 
-		throw new UnsupportedOperationException("HDF5 does not support separate attributes key");
+		return N5KeyValueReader.ATTRIBUTES_JSON;
 	}
 
 	private static IHDF5Reader openHdf5Reader(final String hdf5Path) {
