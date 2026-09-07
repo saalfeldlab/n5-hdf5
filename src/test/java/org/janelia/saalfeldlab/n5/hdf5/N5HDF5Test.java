@@ -16,31 +16,21 @@
  */
 package org.janelia.saalfeldlab.n5.hdf5;
 
-
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-
+import ch.systemsx.cisd.hdf5.HDF5Factory;
+import ch.systemsx.cisd.hdf5.IHDF5Reader;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
+import hdf.hdf5lib.exceptions.HDF5SymbolTableException;
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Random;
-
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
-import hdf.hdf5lib.exceptions.HDF5SymbolTableException;
 import org.apache.commons.io.FileUtils;
 import org.janelia.saalfeldlab.n5.AbstractN5Test;
 import org.janelia.saalfeldlab.n5.ByteArrayDataBlock;
@@ -48,26 +38,22 @@ import org.janelia.saalfeldlab.n5.Compression;
 import org.janelia.saalfeldlab.n5.DataBlock;
 import org.janelia.saalfeldlab.n5.DataType;
 import org.janelia.saalfeldlab.n5.DatasetAttributes;
-import org.janelia.saalfeldlab.n5.DoubleArrayDataBlock;
-import org.janelia.saalfeldlab.n5.FloatArrayDataBlock;
 import org.janelia.saalfeldlab.n5.GzipCompression;
-import org.janelia.saalfeldlab.n5.IntArrayDataBlock;
-import org.janelia.saalfeldlab.n5.LongArrayDataBlock;
 import org.janelia.saalfeldlab.n5.N5Reader;
 import org.janelia.saalfeldlab.n5.N5Reader.Version;
 import org.janelia.saalfeldlab.n5.N5Writer;
 import org.janelia.saalfeldlab.n5.RawCompression;
-import org.janelia.saalfeldlab.n5.ShortArrayDataBlock;
 import org.junit.AfterClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.reflect.TypeToken;
-
-import ch.systemsx.cisd.hdf5.HDF5Factory;
-import ch.systemsx.cisd.hdf5.IHDF5Reader;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -139,42 +125,23 @@ public class N5HDF5Test extends AbstractN5Test {
 
 	@Override protected N5HDF5Writer createN5Writer() throws IOException {
 
-		final String location = tempN5Location();
-		final String hdf5Path = resolveTestHdf5Path(location);
-		Files.deleteIfExists(Paths.get(location));
-		Files.deleteIfExists(Paths.get(hdf5Path));
-		return new N5HDF5Writer(hdf5Path, false, new GsonBuilder());
+		return new N5HDF5Writer(tempN5Location(), false, new GsonBuilder());
 	}
 
-	@Override protected N5Writer createN5Writer(String location, GsonBuilder gson) throws IOException {
+	@Override protected N5Writer createN5Writer(final String location, final GsonBuilder gson) throws IOException {
 
-		return new N5HDF5Writer(resolveTestHdf5Path(location), false, gson);
+		return new N5HDF5Writer(location, false, gson);
 	}
 
-	@Override protected N5Reader createN5Reader(String location, GsonBuilder gson) throws IOException {
+	@Override protected N5Reader createN5Reader(final String location, final GsonBuilder gson) throws IOException {
 
-		return new N5HDF5Reader(resolveTestHdf5Path(location), false, gson);
+		return new N5HDF5Reader(location, false, gson);
 	}
 
 	@Override
-	protected N5Writer createN5Writer(String location) throws IOException {
+	protected N5Writer createN5Writer(final String location) throws IOException {
 
-		return new N5HDF5Writer(resolveTestHdf5Path(location));
-	}
-
-	private static String resolveTestHdf5Path(String location) throws IOException {
-
-		Path locationPath;
-		try {
-			final URI locationUri = N5HDF5Reader.FILE_SYSTEM_KEY_VALUE_ACCESS.uri(location);
-			locationPath = FileSystems.getDefault().provider().getPath(locationUri);
-		} catch (URISyntaxException e) {
-			locationPath = Paths.get(location);
-		}
-		if (Files.isDirectory(locationPath)) {
-			locationPath = locationPath.resolve("test.hdf5");
-		}
-		return locationPath.toFile().getCanonicalPath();
+		return new N5HDF5Writer(location);
 	}
 
 
@@ -327,11 +294,8 @@ public class N5HDF5Test extends AbstractN5Test {
 	@Test
 	public void testAttributesAsJson() throws IOException {
 
-		File tmpFile = Files.createTempDirectory("nulls-test-").toFile();
-		tmpFile.deleteOnExit();
-		String canonicalPath = tmpFile.getCanonicalPath();
 		/* serializeNulls*/
-		try (N5Writer writer = createN5Writer(canonicalPath, new GsonBuilder().serializeNulls())) {
+		try (N5Writer writer = createN5Writer(tempN5Location(), new GsonBuilder().serializeNulls())) {
 
 			N5HDF5Writer h5 = (N5HDF5Writer)writer;
 			final Structured attribute = new Structured();
@@ -402,7 +366,7 @@ public class N5HDF5Test extends AbstractN5Test {
 	public void testType() {
 		System.out.println(new TypeToken<DataType>() {}.getType().getTypeName());
 	}
-	
+
 	@Override
 	@Test
 	/*
