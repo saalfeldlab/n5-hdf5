@@ -599,14 +599,23 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 		return deleteChunk(pathName, datasetAttributes, gridPosition);
 	}
 
-	@Override
-	public boolean deleteChunk(String datasetPath, DatasetAttributes datasetAttributes, long... gridPosition) throws N5Exception {
-
-		// deletion is not supported in HDF5, so the chunk is overwritten with zeros instead
-		// Consider using defaultValue instead of zero?
-
-		if (datasetPath.equals(""))
-			datasetPath = "/";
+	/**
+	 * Creates a zero filled {@link DataBlock} for a chunk of a dataset, cropped
+	 * to the dataset extent.
+	 * <p>
+	 * Cropping matters at the boundary of a dataset whose dimensions are not a
+	 * multiple of the block size: a block of the nominal block size would extend
+	 * past the end of the dataset, and HDF5 rejects the write with
+	 * "selection + offset not within extent".
+	 *
+	 * @param datasetAttributes the attributes of the dataset
+	 * @param gridPosition      the coordinate of the chunk
+	 * @return the empty block, or null if the data type cannot be zero filled or
+	 *         the chunk lies outside the dataset
+	 */
+	private static DataBlock<?> createEmptyBlock(
+			final DatasetAttributes datasetAttributes,
+			final long... gridPosition) {
 
 		final DataType dataType = datasetAttributes.getDataType();
 
@@ -621,12 +630,37 @@ public class N5HDF5Writer extends N5HDF5Reader implements GsonN5Writer {
 			case INT64:
 			case FLOAT32:
 			case FLOAT64:
-				final DataBlock<?> empty = dataType.createDataBlock(datasetAttributes.getBlockSize(), gridPosition);
-				writeChunk(datasetPath, datasetAttributes, empty);
-				return true;
+				break;
 			default:
-				return false;
+				return null;
 		}
+
+		final long[] dimensions = datasetAttributes.getDimensions();
+		final int[] croppedBlockSize = new int[dimensions.length];
+		final long[] offset = new long[dimensions.length];
+		cropBlockSize(gridPosition, dimensions, datasetAttributes.getBlockSize(), croppedBlockSize, offset);
+		for (int d = 0; d < croppedBlockSize.length; ++d) {
+			if (croppedBlockSize[d] <= 0)
+				return null;
+		}
+
+		return dataType.createDataBlock(croppedBlockSize, gridPosition);
+	}
+
+	@Override
+	public boolean deleteChunk(String datasetPath, DatasetAttributes datasetAttributes, long... gridPosition) throws N5Exception {
+
+		// deletion is not supported in HDF5, so the chunk is overwritten with zeros instead
+		// Consider using defaultValue instead of zero?
+		if (datasetPath.equals(""))
+			datasetPath = "/";
+
+		final DataBlock<?> empty = createEmptyBlock(datasetAttributes, gridPosition);
+		if (empty == null)
+			return false;
+
+		writeChunk(datasetPath, datasetAttributes, empty);
+		return true;
 	}
 
 	@Override

@@ -21,7 +21,6 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -48,16 +47,11 @@ import org.janelia.saalfeldlab.n5.Compression;
 import org.janelia.saalfeldlab.n5.DataBlock;
 import org.janelia.saalfeldlab.n5.DataType;
 import org.janelia.saalfeldlab.n5.DatasetAttributes;
-import org.janelia.saalfeldlab.n5.DoubleArrayDataBlock;
-import org.janelia.saalfeldlab.n5.FloatArrayDataBlock;
 import org.janelia.saalfeldlab.n5.GzipCompression;
-import org.janelia.saalfeldlab.n5.IntArrayDataBlock;
-import org.janelia.saalfeldlab.n5.LongArrayDataBlock;
 import org.janelia.saalfeldlab.n5.N5Reader;
 import org.janelia.saalfeldlab.n5.N5Reader.Version;
 import org.janelia.saalfeldlab.n5.N5Writer;
 import org.janelia.saalfeldlab.n5.RawCompression;
-import org.janelia.saalfeldlab.n5.ShortArrayDataBlock;
 import org.junit.AfterClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -553,6 +547,24 @@ public class N5HDF5Test extends AbstractN5Test {
 
 			final DataBlock<?> pos2EmptyBlock = n5.readChunk(datasetName, attributes, position2);
 			assertArrayEquals(zeros, ((ByteArrayDataBlock)pos2EmptyBlock).getData());
+		}
+	}
+
+	@Test
+	public void testDeleteBlockUnalignedDimensions() {
+
+		final long[] unalignedDimensions = new long[]{6, 6, 6};
+		final int[] unalignedBlockSize = new int[]{4, 4, 4};
+
+		try (N5Writer n5 = createTempN5Writer()) {
+			final String datasetName = AbstractN5Test.datasetName + "-test-delete-block-unaligned";
+			n5.createDataset(datasetName, unalignedDimensions, unalignedBlockSize, DataType.UINT8, new RawCompression());
+
+			// interior block, deleted with a full size block
+			assertTrue(n5.deleteBlock(datasetName, 0, 0, 0));
+
+			// boundary block at offset {4, 4, 4}, deleted with a cropped 2x2x2 block
+			assertTrue(n5.deleteBlock(datasetName, 1, 1, 1));
 		}
 	}
 }
