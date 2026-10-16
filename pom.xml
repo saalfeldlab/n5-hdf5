@@ -159,7 +159,7 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.scijava</groupId>
+			<groupId>org.janelia</groupId>
 			<artifactId>janelia-jhdf5</artifactId>
 			<version>${janelia-jhdf5.version}</version>
 		</dependency>
