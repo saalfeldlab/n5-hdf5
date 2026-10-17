@@ -140,18 +140,21 @@
 		<license.skipUpdateLicense>true</license.skipUpdateLicense>
 		<license.skipUpdateProjectLicense>true</license.skipUpdateProjectLicense>
 
-		<scijava.jvm.version>8</scijava.jvm.version>
-		<scijava.jvm.build.version>[1.8.0-101,)</scijava.jvm.build.version>
-
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
-		<n5.version>4.0.0</n5.version>
+		<n5.version>4.0.3-SNAPSHOT</n5.version>
+		<n5-factory-spi.version>1.0.0-SNAPSHOT</n5-factory-spi.version>
 	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.janelia.saalfeldlab</groupId>
 			<artifactId>n5</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.janelia.saalfeldlab</groupId>
+			<artifactId>n5-factory-spi</artifactId>
+			<version>${n5-factory-spi.version}</version>
 		</dependency>
 
 		<dependency>

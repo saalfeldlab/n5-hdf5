@@ -9,9 +9,13 @@ public class HDF5Utils {
 
 	public static byte[] HDF5_SIG = {(byte)137, 72, 68, 70, 13, 10, 26, 10};
 
-	public static boolean isHDF5(String path) {
+	public static boolean isHDF5(final String path) {
 
-		final File f = new File(path);
+		return isHDF5(new File(path));
+	}
+
+	public static boolean isHDF5(final File f) {
+
 		if (!f.exists() || !f.isFile())
 			return false;
 
