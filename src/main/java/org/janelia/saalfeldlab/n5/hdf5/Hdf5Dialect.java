@@ -91,6 +91,12 @@ public class Hdf5Dialect implements ContainerDialect {
 				: new N5Dialect(store, withN5TypeAdapters(gson));
 	}
 
+	@Override
+	public ContainerDialect withGson(final Gson gson) {
+
+		return new Hdf5Dialect(store, gson);
+	}
+
 	private static Gson withN5TypeAdapters(final Gson gson) {
 
 		return gson.newBuilder()
